@@ -29,16 +29,9 @@ type DiscordExecuteWebhookBody = {
   allowed_mentions?: DiscordAllowedMentions
 }
 
-type SessionSummary = {
-  additions: number
-  deletions: number
-  files: number
-}
-
-type SessionSnapshot = {
+type SessionInfo = {
   title?: string
   shareUrl?: string
-  summary?: SessionSummary
 }
 
 const COLORS = {
@@ -146,33 +139,6 @@ async function postDiscordWebhook(input: {
   }
 }
 
-function isSameSummary(a?: SessionSummary, b?: SessionSummary): boolean {
-  if (!a && !b) return true
-  if (!a || !b) return false
-  return (
-    a.additions === b.additions &&
-    a.deletions === b.deletions &&
-    a.files === b.files
-  )
-}
-
-function isImportantSessionUpdate(
-  prev?: SessionSnapshot,
-  next?: SessionSnapshot,
-): {
-  changed: boolean
-  changedKeys: Array<'title' | 'shareUrl' | 'summary'>
-} {
-  const changedKeys: Array<'title' | 'shareUrl' | 'summary'> = []
-
-  if ((prev?.title ?? '') !== (next?.title ?? '')) changedKeys.push('title')
-  if ((prev?.shareUrl ?? '') !== (next?.shareUrl ?? ''))
-    changedKeys.push('shareUrl')
-  if (!isSameSummary(prev?.summary, next?.summary)) changedKeys.push('summary')
-
-  return { changed: changedKeys.length > 0, changedKeys }
-}
-
 export const DiscordNotificationPlugin: Plugin = async () => {
   const webhookUrl = getEnv('DISCORD_WEBHOOK_URL')
   const username = getEnv('DISCORD_WEBHOOK_USERNAME')
@@ -189,7 +155,7 @@ export const DiscordNotificationPlugin: Plugin = async () => {
   const pendingTextPartsByMessageId = new Map<string, any[]>()
   const sessionSerial = new Map<string, Promise<void>>()
 
-  const lastSessionInfo = new Map<string, SessionSnapshot>()
+  const lastSessionInfo = new Map<string, SessionInfo>()
   const lastPartSnapshotById = new Map<string, string>()
   const messageRoleById = new Map<string, 'user' | 'assistant'>()
 
@@ -477,58 +443,6 @@ export const DiscordNotificationPlugin: Plugin = async () => {
             }
 
             lastSessionInfo.set(sessionID, { title, shareUrl })
-            enqueueToThread(sessionID, { embeds: [embed] })
-            if (shouldFlush(sessionID)) await flushPending(sessionID)
-            return
-          }
-
-          case 'session.updated': {
-            const info = (event.properties as any)?.info
-            const sessionID = info?.id as string | undefined
-            if (!sessionID) return
-
-            const next: SessionSnapshot = {
-              title: info?.title as string | undefined,
-              shareUrl: info?.share?.url as string | undefined,
-              summary: info?.summary
-                ? {
-                    additions: Number(info.summary.additions) || 0,
-                    deletions: Number(info.summary.deletions) || 0,
-                    files: Number(info.summary.files) || 0,
-                  }
-                : undefined,
-            }
-
-            const prev = lastSessionInfo.get(sessionID)
-            const { changed, changedKeys } = isImportantSessionUpdate(
-              prev,
-              next,
-            )
-            lastSessionInfo.set(sessionID, next)
-            if (!changed) return
-
-            const fields: Array<[string, unknown]> = [['sessionID', sessionID]]
-
-            if (changedKeys.includes('title')) {
-              fields.push(['title', next.title ?? ''])
-            }
-
-            if (changedKeys.includes('shareUrl')) {
-              fields.push(['share', next.shareUrl ?? ''])
-            }
-
-            if (changedKeys.includes('summary') && next.summary) {
-              fields.push(['files', next.summary.files])
-              fields.push(['additions', next.summary.additions])
-              fields.push(['deletions', next.summary.deletions])
-            }
-
-            const embed: DiscordEmbed = {
-              title: 'Session updated',
-              color: COLORS.info,
-              fields: buildFields(fields, true),
-            }
-
             enqueueToThread(sessionID, { embeds: [embed] })
             if (shouldFlush(sessionID)) await flushPending(sessionID)
             return
