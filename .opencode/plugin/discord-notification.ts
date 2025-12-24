@@ -165,7 +165,6 @@ export const DiscordNotificationPlugin: Plugin = async () => {
 
   const sessionToThread = new Map<string, string>()
   const lastSessionInfo = new Map<string, SessionSnapshot>()
-  const lastMessageSnapshotById = new Map<string, string>()
   const lastPartSnapshotById = new Map<string, string>()
   const messageRoleById = new Map<string, "user" | "assistant">()
 
@@ -510,101 +509,15 @@ export const DiscordNotificationPlugin: Plugin = async () => {
 
            case "message.updated": {
              const info = (event.properties as any)?.info as any
-             const sessionID = info?.sessionID as string | undefined
              const messageID = info?.id as string | undefined
              const role = info?.role as string | undefined
-             if (!sessionID || !messageID) return
+             if (!messageID) return
 
+             // Do not notify on message.updated; keep role tracking for message.part.updated.
              if (role === "user" || role === "assistant") {
                messageRoleById.set(messageID, role)
              }
 
-             const isAssistantNotifiable =
-               role === "assistant" && Boolean(info?.time?.completed || info?.finish || info?.error)
-
-             const isUserNotifiable = role === "user"
-
-             if (role === "assistant" && !isAssistantNotifiable) return
-             if (role !== "assistant" && role !== "user") return
-
-             const snapshot =
-               role === "user"
-                 ? JSON.stringify({
-                     role,
-                     sessionID,
-                     messageID,
-                     created: info?.time?.created,
-                     summaryTitle: info?.summary?.title,
-                     summaryBody: info?.summary?.body,
-                     diffCount: Array.isArray(info?.summary?.diffs) ? info.summary.diffs.length : 0,
-                     agent: info?.agent,
-                     modelProviderID: info?.model?.providerID,
-                     modelID: info?.model?.modelID,
-                   })
-                 : JSON.stringify({
-                     role,
-                     sessionID,
-                     messageID,
-                     created: info?.time?.created,
-                     completed: info?.time?.completed,
-                     providerID: info?.providerID,
-                     modelID: info?.modelID,
-                     mode: info?.mode,
-                     finish: info?.finish,
-                     error: info?.error,
-                     cost: info?.cost,
-                     tokens: info?.tokens,
-                   })
-
-             if (!setIfChanged(lastMessageSnapshotById, messageID, snapshot)) return
-
-             if (role === "user" && !isUserNotifiable) return
-
-             const embed: DiscordEmbed = {
-               title: role === "user" ? "Message updated (user)" : "Message updated (assistant)",
-               color: role === "assistant" && info?.error ? COLORS.error : COLORS.info,
-               timestamp: toIsoTimestamp(info?.time?.completed ?? info?.time?.created),
-               fields:
-                 role === "assistant"
-                   ? buildFields(
-                       [
-                         ["sessionID", sessionID],
-                         ["messageID", messageID],
-                         ["role", role],
-                         ["provider", info?.providerID],
-                         ["model", info?.modelID],
-                         ["mode", info?.mode],
-                         ["finish", info?.finish],
-                         ["cost", info?.cost],
-                         ["tokens", info?.tokens],
-                       ],
-                       false,
-                     )
-                   : buildFields(
-                       [
-                         ["sessionID", sessionID],
-                         ["messageID", messageID],
-                         ["role", role],
-                         ["agent", info?.agent],
-                         ["model", `${safeString(info?.model?.providerID)}/${safeString(info?.model?.modelID)}`],
-                         ["diffs", Array.isArray(info?.summary?.diffs) ? info.summary.diffs.length : ""],
-                       ],
-                       false,
-                     ),
-               description:
-                 role === "assistant" && info?.error
-                   ? truncateText(safeString(info.error), 4096)
-                   : role === "user" && (info?.summary?.title || info?.summary?.body)
-                     ? truncateText(
-                         [info?.summary?.title, info?.summary?.body].filter(Boolean).join("\n\n"),
-                         4096,
-                       )
-                     : undefined,
-             }
-
-             await sendToThread(sessionID, {
-               embeds: [embed],
-             })
              return
            }
 
