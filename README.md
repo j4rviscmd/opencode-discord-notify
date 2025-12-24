@@ -36,6 +36,7 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 
 - `DISCORD_WEBHOOK_USERNAME`: 投稿者名
 - `DISCORD_WEBHOOK_AVATAR_URL`: アイコン URL
+- `DISCORD_WEBHOOK_COMPLETE_MENTION`: `session.idle` / `session.error` の通知に付けるメンション（`@everyone` または `@here` のみサポート）
 
 ## 仕様メモ
 
@@ -46,11 +47,12 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
   - `summary` の付与/変更（additions/deletions/files のみ）
 - `permission.updated` / `session.updated` / `session.idle` は thread がまだ作られていない場合でも、通知時に `thread_name` 付きで投稿してスレッドを遅延作成します（取りこぼし防止）。
 - `session.error` は upstream の payload で `sessionID` が optional のため、`sessionID` が無い場合は通知しません。
+- `DISCORD_WEBHOOK_COMPLETE_MENTION=@everyone` を設定すると、`session.idle` / `session.error` の通知で `@everyone` メンションします（Discord 側で Webhook にメンション権限が必要です）。
 
 ## 動作確認（手動）
 
 1. OpenCode を起動してセッション開始 → Forum にスレッドが増える
 2. 権限要求が出るケースを作る → 同スレッドに通知（未作成なら通知時にスレッド作成）
 3. タイトル変更・共有URL付与・summary更新が起きる → `session.updated` が通知される
-4. セッション完了 → `session.idle` が通知される
-5. エラー発生 → `session.error` が通知される（`sessionID` 無しは通知されない）
+4. セッション完了 → `session.idle` が通知される（`DISCORD_WEBHOOK_COMPLETE_MENTION` 設定時はメンションも飛ぶ）
+5. エラー発生 → `session.error` が通知される（`sessionID` 無しは通知されない / `DISCORD_WEBHOOK_COMPLETE_MENTION` 設定時はメンションも飛ぶ）

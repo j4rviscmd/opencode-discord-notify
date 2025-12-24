@@ -14,12 +14,19 @@ type DiscordEmbed = {
   fields?: Array<{ name: string; value: string; inline?: boolean }>
 }
 
+type DiscordAllowedMentions = {
+  parse?: Array<"everyone" | "roles" | "users">
+  roles?: string[]
+  users?: string[]
+}
+
 type DiscordExecuteWebhookBody = {
   content?: string
   username?: string
   avatar_url?: string
   thread_name?: string
   embeds?: DiscordEmbed[]
+  allowed_mentions?: DiscordAllowedMentions
 }
 
 type SessionSummary = {
@@ -153,6 +160,8 @@ export const DiscordNotificationPlugin: Plugin = async () => {
   const webhookUrl = getEnv("DISCORD_WEBHOOK_URL")
   const username = getEnv("DISCORD_WEBHOOK_USERNAME")
   const avatarUrl = getEnv("DISCORD_WEBHOOK_AVATAR_URL")
+  const completeMentionRaw = (getEnv("DISCORD_WEBHOOK_COMPLETE_MENTION") ?? "").trim()
+  const completeMention = completeMentionRaw || undefined
 
   const sessionToThread = new Map<string, string>()
   const lastSessionInfo = new Map<string, SessionSnapshot>()
@@ -222,6 +231,31 @@ export const DiscordNotificationPlugin: Plugin = async () => {
     // Avoid crashing opencode; keep logs minimal
     if (error) console.warn(`[opencode-discord-hook] ${message}`, error)
     else console.warn(`[opencode-discord-hook] ${message}`)
+  }
+
+  function buildCompleteMention(): { content?: string; allowed_mentions?: DiscordAllowedMentions } | undefined {
+    if (!completeMention) return undefined
+
+    if (completeMention === "@everyone" || completeMention === "@here") {
+      return {
+        content: completeMention,
+        allowed_mentions: {
+          parse: ["everyone"],
+        },
+      }
+    }
+
+    warn(
+      `DISCORD_WEBHOOK_COMPLETE_MENTION is set but unsupported: ${completeMention}. Only @everyone/@here are supported.`,
+    )
+
+    // Avoid accidental pings if the value contains role/user mentions.
+    return {
+      content: completeMention,
+      allowed_mentions: {
+        parse: [],
+      },
+    }
   }
 
   if (!webhookUrl) {
@@ -360,7 +394,11 @@ export const DiscordNotificationPlugin: Plugin = async () => {
               fields: buildFields([["sessionID", sessionID]], false),
             }
 
+            const mention = buildCompleteMention()
+
             await sendToThread(sessionID, {
+              content: mention ? `${mention.content} Session completed` : undefined,
+              allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
             return
@@ -380,7 +418,11 @@ export const DiscordNotificationPlugin: Plugin = async () => {
 
             if (!sessionID) return
 
+            const mention = buildCompleteMention()
+
             await sendToThread(sessionID, {
+              content: mention ? `${mention.content} Session error` : undefined,
+              allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
             return
