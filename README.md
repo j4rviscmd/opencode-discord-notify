@@ -1,5 +1,10 @@
 # opencode-discord-hook
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![OpenCode Plugin](https://img.shields.io/badge/OpenCode-Plugin-4c8bf5)
+![Discord Webhook](https://img.shields.io/badge/Discord-Webhook-5865F2?logo=discord&logoColor=fff)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
+
 OpenCode のイベントを Discord Webhook に通知するプラグインです。
 Discord の Forum チャンネル webhook を前提に、セッション開始時（または最初の通知タイミング）にスレッド（投稿）を作成して、その後の更新を同スレッドに流します。
 
