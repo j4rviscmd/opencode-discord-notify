@@ -85,4 +85,13 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 - フォーマット: `npx prettier . --write`
 - プラグイン本体: `.opencode/plugin/discord-notification.ts`
 
-PR / Issue 大歓迎です。
+## 今後の展望（予定）
+
+- npm パッケージとして公開（インストール/更新を簡単にする）
+- 複数 webhook / 複数チャンネル対応（用途別に振り分け）
+- 通知内容のカスタマイズ（通知するイベント、本文テンプレ、メンション付与ポリシーなど）
+  - 設定ファイル（例: `opencode-discord-hook.config.json`）を読み取り、必要に応じて環境変数から値を解決する方式も検討
+- Discord の制限対策を強化（レート制限時のリトライ、分割投稿、長文省略ルールの改善）
+- CI 整備（lint/format の自動化、簡単なテスト追加）
+
+**PR / Issue 大歓迎です。**
