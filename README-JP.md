@@ -7,6 +7,12 @@
 
 [English](README.md) | 日本語
 
+<!-- markdownlint-disable -->
+<p align="center">
+  <img src="assets/image/sample-forum-ch.png" width="700" alt="Discord Forum channel example" />
+</p>
+<!-- markdownlint-enable -->
+
 OpenCode のイベントを Discord Webhook に通知するプラグインです。
 Discord の Forum チャンネル webhook を前提に、セッション開始時（または最初の通知タイミング）にスレッド（投稿）を作成して、その後の更新を同スレッドに流します。
 通常のテキストチャンネル webhook でも利用できます（その場合はスレッドが作れないため、チャンネルへ直投稿します）。

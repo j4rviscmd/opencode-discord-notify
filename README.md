@@ -7,6 +7,12 @@
 
 English | [日本語](README-JP.md)
 
+<!-- markdownlint-disable -->
+<p align="center">
+  <img src="assets/image/sample-forum-ch.png" width="700" alt="Discord Forum channel example" />
+</p>
+<!-- markdownlint-enable -->
+
 A plugin that posts OpenCode events to a Discord webhook.
 
 It is optimized for Discord Forum channel webhooks: it creates one thread per session (via `thread_name`) and posts subsequent updates to the same thread.
