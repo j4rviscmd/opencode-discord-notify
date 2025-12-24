@@ -45,6 +45,7 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 - `DISCORD_WEBHOOK_USERNAME`: 投稿者名
 - `DISCORD_WEBHOOK_AVATAR_URL`: アイコン URL
 - `DISCORD_WEBHOOK_COMPLETE_MENTION`: `session.idle` / `session.error` の通知本文に付けるメンション（`@everyone` または `@here` のみ許容。Forum webhook の仕様上、ping は常に発生しない）
+- `DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT`: `1` のとき input context（`<file>` から始まる user `text` part）を通知しない（デフォルト: `1` / `0` で無効化）
 
 ## 仕様メモ
 

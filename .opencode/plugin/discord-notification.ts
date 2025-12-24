@@ -148,6 +148,11 @@ export const DiscordNotificationPlugin: Plugin = async () => {
   ).trim()
   const completeMention = completeMentionRaw || undefined
 
+  const excludeInputContextRaw = (
+    getEnv('DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT') ?? '1'
+  ).trim()
+  const excludeInputContext = excludeInputContextRaw !== '0'
+
   const sessionToThread = new Map<string, string>()
   const threadCreateInFlight = new Map<string, Promise<string | undefined>>()
   const pendingPostsBySession = new Map<string, DiscordExecuteWebhookBody[]>()
@@ -161,6 +166,10 @@ export const DiscordNotificationPlugin: Plugin = async () => {
 
   function normalizeThreadTitle(value: unknown): string {
     return safeString(value).replace(/\s+/g, ' ').trim()
+  }
+
+  function isInputContextText(text: string): boolean {
+    return text.trimStart().startsWith('<file>')
   }
 
   function buildThreadName(sessionID: string): string {
@@ -568,6 +577,21 @@ export const DiscordNotificationPlugin: Plugin = async () => {
                   if (!sessionID || !partID || type !== 'text') continue
 
                   const text = safeString(pendingPart?.text)
+
+                  if (
+                    role === 'user' &&
+                    excludeInputContext &&
+                    isInputContextText(text)
+                  ) {
+                    const snapshot = JSON.stringify({
+                      type,
+                      role,
+                      skipped: 'input_context',
+                    })
+                    setIfChanged(lastPartSnapshotById, partID, snapshot)
+                    continue
+                  }
+
                   const snapshot = JSON.stringify({ type, role, text })
                   if (!setIfChanged(lastPartSnapshotById, partID, snapshot))
                     continue
@@ -633,6 +657,21 @@ export const DiscordNotificationPlugin: Plugin = async () => {
               if (role === 'assistant' && !part?.time?.end) return
 
               const text = safeString(part?.text)
+
+              if (
+                role === 'user' &&
+                excludeInputContext &&
+                isInputContextText(text)
+              ) {
+                const snapshot = JSON.stringify({
+                  type,
+                  role,
+                  skipped: 'input_context',
+                })
+                setIfChanged(lastPartSnapshotById, partID, snapshot)
+                return
+              }
+
               const snapshot = JSON.stringify({ type, role, text })
               if (!setIfChanged(lastPartSnapshotById, partID, snapshot)) return
 
