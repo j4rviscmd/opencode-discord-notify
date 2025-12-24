@@ -165,6 +165,9 @@ export const DiscordNotificationPlugin: Plugin = async () => {
 
   const sessionToThread = new Map<string, string>()
   const lastSessionInfo = new Map<string, SessionSnapshot>()
+  const lastMessageSnapshotById = new Map<string, string>()
+  const lastPartSnapshotById = new Map<string, string>()
+  const messageRoleById = new Map<string, "user" | "assistant">()
 
   function buildThreadName(sessionID: string, title?: string): string {
     const base = (title ?? "").trim() || `session ${sessionID}`
@@ -256,6 +259,65 @@ export const DiscordNotificationPlugin: Plugin = async () => {
         parse: [],
       },
     }
+  }
+
+  function normalizeTodoContent(value: unknown): string {
+    return safeString(value).replace(/\s+/g, " ").trim()
+  }
+
+  function truncateText(value: string, maxLength: number): string {
+    if (value.length <= maxLength) return value
+    if (maxLength <= 3) return value.slice(0, maxLength)
+    return value.slice(0, maxLength - 3) + "..."
+  }
+
+  function setIfChanged(map: Map<string, string>, key: string, next: string): boolean {
+    const prev = map.get(key)
+    if (prev === next) return false
+    map.set(key, next)
+    return true
+  }
+
+  function buildTodoChecklist(todos: unknown): string {
+    const maxDescription = 4096
+    const items = Array.isArray(todos) ? todos : []
+
+    let matchCount = 0
+    let description = ""
+    let truncated = false
+
+    for (const item of items) {
+      const status = (item as any)?.status as string | undefined
+      if (status === "cancelled") continue
+
+      const content = normalizeTodoContent((item as any)?.content)
+      if (!content) continue
+
+      const marker = status === "completed" ? "[✓]" : status === "in_progress" ? "[▶]" : "[ ]"
+      const line = `> ${marker} ${truncateText(content, 200)}`
+
+      const nextChunk = (description ? "\n" : "") + line
+      if (description.length + nextChunk.length > maxDescription) {
+        truncated = true
+        break
+      }
+
+      description += nextChunk
+      matchCount += 1
+    }
+
+    if (!description) {
+      return "> (no todos)"
+    }
+
+    if (truncated || matchCount < items.length) {
+      const moreLine = `${description ? "\n" : ""}> ...and more`
+      if (description.length + moreLine.length <= maxDescription) {
+        description += moreLine
+      }
+    }
+
+    return description
   }
 
   if (!webhookUrl) {
@@ -425,6 +487,212 @@ export const DiscordNotificationPlugin: Plugin = async () => {
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
+            return
+          }
+
+          case "todo.updated": {
+            const p = event.properties as any
+            const sessionID = p?.sessionID as string | undefined
+            if (!sessionID) return
+
+            const embed: DiscordEmbed = {
+              title: "Todo updated",
+              color: COLORS.info,
+              fields: buildFields([["sessionID", sessionID]], false),
+              description: buildTodoChecklist(p?.todos),
+            }
+
+            await sendToThread(sessionID, {
+              embeds: [embed],
+            })
+            return
+          }
+
+           case "message.updated": {
+             const info = (event.properties as any)?.info as any
+             const sessionID = info?.sessionID as string | undefined
+             const messageID = info?.id as string | undefined
+             const role = info?.role as string | undefined
+             if (!sessionID || !messageID) return
+
+             if (role === "user" || role === "assistant") {
+               messageRoleById.set(messageID, role)
+             }
+
+             const isAssistantNotifiable =
+               role === "assistant" && Boolean(info?.time?.completed || info?.finish || info?.error)
+
+             const isUserNotifiable = role === "user"
+
+             if (role === "assistant" && !isAssistantNotifiable) return
+             if (role !== "assistant" && role !== "user") return
+
+             const snapshot =
+               role === "user"
+                 ? JSON.stringify({
+                     role,
+                     sessionID,
+                     messageID,
+                     created: info?.time?.created,
+                     summaryTitle: info?.summary?.title,
+                     summaryBody: info?.summary?.body,
+                     diffCount: Array.isArray(info?.summary?.diffs) ? info.summary.diffs.length : 0,
+                     agent: info?.agent,
+                     modelProviderID: info?.model?.providerID,
+                     modelID: info?.model?.modelID,
+                   })
+                 : JSON.stringify({
+                     role,
+                     sessionID,
+                     messageID,
+                     created: info?.time?.created,
+                     completed: info?.time?.completed,
+                     providerID: info?.providerID,
+                     modelID: info?.modelID,
+                     mode: info?.mode,
+                     finish: info?.finish,
+                     error: info?.error,
+                     cost: info?.cost,
+                     tokens: info?.tokens,
+                   })
+
+             if (!setIfChanged(lastMessageSnapshotById, messageID, snapshot)) return
+
+             if (role === "user" && !isUserNotifiable) return
+
+             const embed: DiscordEmbed = {
+               title: role === "user" ? "Message updated (user)" : "Message updated (assistant)",
+               color: role === "assistant" && info?.error ? COLORS.error : COLORS.info,
+               timestamp: toIsoTimestamp(info?.time?.completed ?? info?.time?.created),
+               fields:
+                 role === "assistant"
+                   ? buildFields(
+                       [
+                         ["sessionID", sessionID],
+                         ["messageID", messageID],
+                         ["role", role],
+                         ["provider", info?.providerID],
+                         ["model", info?.modelID],
+                         ["mode", info?.mode],
+                         ["finish", info?.finish],
+                         ["cost", info?.cost],
+                         ["tokens", info?.tokens],
+                       ],
+                       false,
+                     )
+                   : buildFields(
+                       [
+                         ["sessionID", sessionID],
+                         ["messageID", messageID],
+                         ["role", role],
+                         ["agent", info?.agent],
+                         ["model", `${safeString(info?.model?.providerID)}/${safeString(info?.model?.modelID)}`],
+                         ["diffs", Array.isArray(info?.summary?.diffs) ? info.summary.diffs.length : ""],
+                       ],
+                       false,
+                     ),
+               description:
+                 role === "assistant" && info?.error
+                   ? truncateText(safeString(info.error), 4096)
+                   : role === "user" && (info?.summary?.title || info?.summary?.body)
+                     ? truncateText(
+                         [info?.summary?.title, info?.summary?.body].filter(Boolean).join("\n\n"),
+                         4096,
+                       )
+                     : undefined,
+             }
+
+             await sendToThread(sessionID, {
+               embeds: [embed],
+             })
+             return
+           }
+
+
+          case "message.part.updated": {
+            const p = event.properties as any
+            const part = p?.part as any
+            const sessionID = part?.sessionID as string | undefined
+            const messageID = part?.messageID as string | undefined
+            const partID = part?.id as string | undefined
+            const type = part?.type as string | undefined
+            if (!sessionID || !messageID || !partID || !type) return
+
+            if (type === "reasoning") return
+
+             if (type === "text") {
+               const role = messageRoleById.get(messageID)
+               if (role !== "assistant" && role !== "user") return
+               if (role === "assistant" && !part?.time?.end) return
+
+               const text = safeString(part?.text)
+               const snapshot = JSON.stringify({ type, role, text })
+               if (!setIfChanged(lastPartSnapshotById, partID, snapshot)) return
+
+               const embed: DiscordEmbed = {
+                 title: role === "user" ? "Message part updated: text (user)" : "Message part updated: text (assistant)",
+                 color: COLORS.info,
+                 fields: buildFields(
+                   [
+                     ["sessionID", sessionID],
+                     ["messageID", messageID],
+                     ["partID", partID],
+                     ["role", role],
+                   ],
+                   false,
+                 ),
+                 description: truncateText(text || "(empty)", 4096),
+               }
+
+               await sendToThread(sessionID, {
+                 embeds: [embed],
+               })
+               return
+             }
+
+
+            if (type === "tool") {
+              const status = part?.state?.status as string | undefined
+              if (status !== "completed" && status !== "error") return
+
+              const tool = safeString(part?.tool)
+              const title = safeString(part?.state?.title)
+              const output = safeString(part?.state?.output)
+              const error = safeString(part?.state?.error)
+
+              const snapshot =
+                status === "completed"
+                  ? JSON.stringify({ type, status, tool, title, output })
+                  : JSON.stringify({ type, status, tool, error })
+
+              if (!setIfChanged(lastPartSnapshotById, partID, snapshot)) return
+
+              const description =
+                status === "completed"
+                  ? truncateText([title, output].filter(Boolean).join("\n\n"), 4096)
+                  : truncateText(error || "(error)", 4096)
+
+              const embed: DiscordEmbed = {
+                title: `Message part updated: tool (${status})`,
+                color: status === "error" ? COLORS.error : COLORS.info,
+                fields: buildFields(
+                  [
+                    ["sessionID", sessionID],
+                    ["messageID", messageID],
+                    ["partID", partID],
+                    ["tool", tool],
+                  ],
+                  false,
+                ),
+                description,
+              }
+
+              await sendToThread(sessionID, {
+                embeds: [embed],
+              })
+              return
+            }
+
             return
           }
 

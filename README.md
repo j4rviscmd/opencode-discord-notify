@@ -10,6 +10,9 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 - `permission.updated`: 権限要求 → 通知
 - `session.idle`: セッション完了 → 通知
 - `session.error`: エラー → 通知（`sessionID` が無いケースは通知しない）
+- `todo.updated`: Todo 更新 → チェックリスト形式で通知（順序は受信順 / `cancelled` は除外）
+- `message.updated`: メッセージ情報更新 → user は summary変化時のみ、assistant は完了/エラー時のみ通知（tokens/cost の途中更新は通知しない / 重複イベントは抑制）
+- `message.part.updated`: メッセージ本文/ツール結果更新 → `text` は user は即時通知、assistant は確定時（`time.end`）のみ通知。`tool` は `completed` / `error` のみ通知（`reasoning` は通知しない / 重複イベントは抑制）
 
 ## セットアップ
 
@@ -48,6 +51,12 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 - `permission.updated` / `session.updated` / `session.idle` は thread がまだ作られていない場合でも、通知時に `thread_name` 付きで投稿してスレッドを遅延作成します（取りこぼし防止）。
 - `session.error` は upstream の payload で `sessionID` が optional のため、`sessionID` が無い場合は通知しません。
 - `DISCORD_WEBHOOK_COMPLETE_MENTION=@everyone` を設定すると、`session.idle` / `session.error` の通知で `@everyone` メンションします（Discord 側で Webhook にメンション権限が必要です）。
+- `todo.updated` は、`todos` を受信した順のまま `> [ ]` 形式で通知します（`in_progress` は `[▶]`、`completed` は `[✓]`、`cancelled` は除外）。
+- `message.updated` は通知が多くなりやすいため、assistant は完了/エラー時のみ・user は summary変化時のみ通知し、直前に送った内容と同一なら通知しない（重複抑制）ようにしています。
+- `message.part.updated` は以下の方針です。
+  - `text`: user は即時通知。assistant は `part.time.end` がある確定時のみ通知（ストリーミング途中更新は通知しない）
+  - `tool`: `state.status` が `completed` / `error` のみ通知（`pending` / `running` は通知しない）
+  - `reasoning`: 通知しない（内部思考が含まれる可能性があるため）
 
 ## 動作確認（手動）
 
