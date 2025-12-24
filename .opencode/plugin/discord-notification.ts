@@ -651,47 +651,7 @@ export const DiscordNotificationPlugin: Plugin = async () => {
              }
 
 
-            if (type === "tool") {
-              const status = part?.state?.status as string | undefined
-              if (status !== "completed" && status !== "error") return
-
-              const tool = safeString(part?.tool)
-              const title = safeString(part?.state?.title)
-              const output = safeString(part?.state?.output)
-              const error = safeString(part?.state?.error)
-
-              const snapshot =
-                status === "completed"
-                  ? JSON.stringify({ type, status, tool, title, output })
-                  : JSON.stringify({ type, status, tool, error })
-
-              if (!setIfChanged(lastPartSnapshotById, partID, snapshot)) return
-
-              const description =
-                status === "completed"
-                  ? truncateText([title, output].filter(Boolean).join("\n\n"), 4096)
-                  : truncateText(error || "(error)", 4096)
-
-              const embed: DiscordEmbed = {
-                title: `Message part updated: tool (${status})`,
-                color: status === "error" ? COLORS.error : COLORS.info,
-                fields: buildFields(
-                  [
-                    ["sessionID", sessionID],
-                    ["messageID", messageID],
-                    ["partID", partID],
-                    ["tool", tool],
-                  ],
-                  false,
-                ),
-                description,
-              }
-
-              await sendToThread(sessionID, {
-                embeds: [embed],
-              })
-              return
-            }
+            if (type === "tool") return
 
             return
           }

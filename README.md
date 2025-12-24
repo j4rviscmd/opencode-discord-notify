@@ -12,11 +12,17 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 - `session.error`: エラー → 通知（`sessionID` が無いケースは通知しない）
 - `todo.updated`: Todo 更新 → チェックリスト形式で通知（順序は受信順 / `cancelled` は除外）
 - `message.updated`: メッセージ情報更新 → user は summary変化時のみ、assistant は完了/エラー時のみ通知（tokens/cost の途中更新は通知しない / 重複イベントは抑制）
-- `message.part.updated`: メッセージ本文/ツール結果更新 → `text` は user は即時通知、assistant は確定時（`time.end`）のみ通知。`tool` は `completed` / `error` のみ通知（`reasoning` は通知しない / 重複イベントは抑制）
+- `message.part.updated`: メッセージ本文/ツール結果更新 → `text` は user は即時通知、assistant は確定時（`time.end`）のみ通知。`tool` は通知しない（`reasoning` は通知しない / 重複イベントは抑制）
 
 ## セットアップ
 
-### 1) プラグイン配置
+### 1) 依存のインストール
+
+グローバルにインストールします。
+
+- `npm i -g @opencode-ai/plugin`
+
+### 2) プラグイン配置
 
 プロジェクト直下に以下のファイルを置きます。
 
@@ -24,12 +30,12 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 
 （グローバルに使いたい場合は `~/.config/opencode/plugin/` 配下でもOKです）
 
-### 2) Discord 側の準備
+### 3) Discord 側の準備
 
 - Discord の Forum チャンネルで Webhook を作成してください。
 - テキストチャンネル webhook でも動きますが、スレッド作成（`thread_name`）は Forum 向けの挙動が前提です。
 
-### 3) 環境変数
+### 4) 環境変数
 
 必須:
 
@@ -55,7 +61,7 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 - `message.updated` は通知が多くなりやすいため、assistant は完了/エラー時のみ・user は summary変化時のみ通知し、直前に送った内容と同一なら通知しない（重複抑制）ようにしています。
 - `message.part.updated` は以下の方針です。
   - `text`: user は即時通知。assistant は `part.time.end` がある確定時のみ通知（ストリーミング途中更新は通知しない）
-  - `tool`: `state.status` が `completed` / `error` のみ通知（`pending` / `running` は通知しない）
+  - `tool`: 通知しない
   - `reasoning`: 通知しない（内部思考が含まれる可能性があるため）
 
 ## 動作確認（手動）
