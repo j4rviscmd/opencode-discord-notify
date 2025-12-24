@@ -79,4 +79,10 @@ Discord の Forum チャンネル webhook を前提に、セッション開始�
 3. セッション完了 → `session.idle` が通知される（`DISCORD_WEBHOOK_COMPLETE_MENTION` 設定時は本文に `@everyone` / `@here` を含めて投稿するが Forum webhook では ping は発生しない）
 4. エラー発生 → `session.error` が通知される（`sessionID` 無しは通知されない / `DISCORD_WEBHOOK_COMPLETE_MENTION` 設定時は本文に `@everyone` / `@here` を含めて投稿するが Forum webhook では ping は発生しない）
 
-**PR / Issue 大歓迎です。**
+## 開発
+
+- 依存のインストール: `npm i`
+- フォーマット: `npx prettier . --write`
+- プラグイン本体: `.opencode/plugin/discord-notification.ts`
+
+PR / Issue 大歓迎です。
