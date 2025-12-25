@@ -139,7 +139,21 @@ async function postDiscordWebhook(input: {
   }
 }
 
+const GLOBAL_GUARD_KEY = '__opencode_discord_notify_registered__'
+
+type GlobalThisWithGuard = typeof globalThis & {
+  [GLOBAL_GUARD_KEY]?: boolean
+}
+
 const plugin: Plugin = async () => {
+  const globalWithGuard = globalThis as GlobalThisWithGuard
+  if (globalWithGuard[GLOBAL_GUARD_KEY]) {
+    return {
+      event: async () => {},
+    }
+  }
+  globalWithGuard[GLOBAL_GUARD_KEY] = true
+
   const webhookUrl = getEnv('DISCORD_WEBHOOK_URL')
   const username = getEnv('DISCORD_WEBHOOK_USERNAME')
   const avatarUrl = getEnv('DISCORD_WEBHOOK_AVATAR_URL')
@@ -755,4 +769,3 @@ const plugin: Plugin = async () => {
 }
 
 export default plugin
-export const DiscordNotificationPlugin = plugin
