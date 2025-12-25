@@ -93,9 +93,6 @@ OpenCode を再起動してください。
 
 ## 開発
 
-> [!WARNING]
-> グローバル（`~/.config/opencode/plugin/`）とプロジェクト（`.opencode/plugin/`）の両方に配置すると、プラグインが二重に読み込まれて通知が重複します。どちらか一方にしてください。
-
 - 依存のインストール: `npm i`
 - フォーマット: `npx prettier . --write`
 - プラグイン本体: `src/index.ts`

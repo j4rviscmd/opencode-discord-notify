@@ -1,6 +1,6 @@
 {
   "name": "opencode-discord-notify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A plugin that posts OpenCode events to a Discord webhook.",
   "license": "MIT",
   "type": "module",

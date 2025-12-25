@@ -95,9 +95,6 @@ Optional:
 
 ## Development
 
-> [!WARNING]
-> If you place the plugin in both the global directory (`~/.config/opencode/plugin/`) and the project directory (`.opencode/plugin/`), it may be loaded twice and send duplicate notifications. Choose either global or project placement, not both.
-
 - Install deps: `npm i`
 - Format: `npx prettier . --write`
 - Plugin source: `src/index.ts`
