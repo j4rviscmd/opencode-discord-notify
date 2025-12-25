@@ -21,6 +21,9 @@
     "README-JP.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --out-dir dist --clean",
     "format": "prettier . --write",
