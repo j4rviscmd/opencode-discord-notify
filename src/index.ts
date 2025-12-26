@@ -441,6 +441,8 @@ const plugin: Plugin = async ({ client }) => {
   const sendParams = parseSendParams(getEnv('DISCORD_SEND_PARAMS'))
 
   const lastAlertAtByKey = new Map<string, number>()
+  // 既送 partID を保持
+  const sentTextPartIds = new Set<string>()
 
   const showToast: ShowToast = async ({ title, message, variant }) => {
     try {
@@ -642,6 +644,58 @@ const plugin: Plugin = async ({ client }) => {
     return buildMention(permissionMention, 'DISCORD_WEBHOOK_PERMISSION_MENTION')
   }
 
+  async function handleTextPart(input: {
+    part: any
+    role: 'user' | 'assistant'
+    sessionID: string
+    messageID: string
+    replay?: boolean
+  }) {
+    const { part, role, sessionID, messageID, replay } = input
+    const partID = part?.id as string | undefined
+    if (!partID) return
+    if (!replay && role === 'assistant' && !part?.time?.end) return
+
+    if (sentTextPartIds.has(partID)) return
+    sentTextPartIds.add(partID)
+
+    const text = safeString(part?.text)
+
+    if (role === 'user' && excludeInputContext && isInputContextText(text)) {
+      return
+    }
+
+    if (role === 'user' && !firstUserTextBySession.has(sessionID)) {
+      const normalized = normalizeThreadTitle(text)
+      if (normalized) firstUserTextBySession.set(sessionID, normalized)
+    }
+
+    const embed: DiscordEmbed = {
+      title: getTextPartEmbedTitle(role),
+      color: COLORS.info,
+      fields: buildFields(
+        filterSendFields(
+          [
+            ['sessionID', sessionID],
+            ['messageID', messageID],
+            ['partID', partID],
+            ['role', role],
+          ],
+          sendParams,
+        ),
+      ),
+      description: truncateText(text || '(empty)', 4096),
+    }
+
+    enqueueToThread(sessionID, { embeds: [embed] })
+
+    if (role === 'user') {
+      await flushPending(sessionID)
+    } else if (shouldFlush(sessionID)) {
+      await flushPending(sessionID)
+    }
+  }
+
   function setIfChanged(
     map: Map<string, string>,
     key: string,
@@ -691,7 +745,11 @@ const plugin: Plugin = async ({ client }) => {
 
             lastSessionInfo.set(sessionID, { title, shareUrl })
             enqueueToThread(sessionID, { embeds: [embed] })
-            if (shouldFlush(sessionID)) await flushPending(sessionID)
+            // NOTE:
+            // 「状態更新イベント」であり会話の区切りではない。
+            // ここで flush すると、assistant 最終発言の flush と競合し
+            // Agent says が二重送信されるため、enqueue のみに留める。
+            // if (shouldFlush(sessionID)) await flushPending(sessionID)
             return
           }
 
@@ -727,7 +785,11 @@ const plugin: Plugin = async ({ client }) => {
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
-            if (shouldFlush(sessionID)) await flushPending(sessionID)
+            // NOTE:
+            // 「状態更新イベント」であり会話の区切りではない。
+            // ここで flush すると、assistant 最終発言の flush と競合し
+            // Agent says が二重送信されるため、enqueue のみに留める。
+            // if (shouldFlush(sessionID)) await flushPending(sessionID)
             return
           }
 
@@ -754,7 +816,11 @@ const plugin: Plugin = async ({ client }) => {
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
-            await flushPending(sessionID)
+            // NOTE:
+            // 「状態更新イベント」であり会話の区切りではない。
+            // ここで flush すると、assistant 最終発言の flush と競合し
+            // Agent says が二重送信されるため、enqueue のみに留める。
+            // await flushPending(sessionID)
             return
           }
 
@@ -811,7 +877,11 @@ const plugin: Plugin = async ({ client }) => {
             }
 
             enqueueToThread(sessionID, { embeds: [embed] })
-            if (shouldFlush(sessionID)) await flushPending(sessionID)
+            // NOTE:
+            // 「状態更新イベント」であり会話の区切りではない。
+            // ここで flush すると、assistant 最終発言の flush と競合し
+            // Agent says が二重送信されるため、enqueue のみに留める。
+            // if (shouldFlush(sessionID)) await flushPending(sessionID)
             return
           }
 
@@ -821,12 +891,28 @@ const plugin: Plugin = async ({ client }) => {
             const role = info?.role as string | undefined
             if (!messageID) return
 
-            // role のみ確定させる
-            if (role === 'user' || role === 'assistant') {
-              messageRoleById.set(messageID, role)
+            if (role !== 'user' && role !== 'assistant') return
+            messageRoleById.set(messageID, role)
+
+            const pendingParts = pendingTextPartsByMessageId.get(messageID)
+            if (!pendingParts?.length) return
+
+            pendingTextPartsByMessageId.delete(messageID)
+
+            for (const part of pendingParts) {
+              const sessionID = part?.sessionID
+              const partID = part?.id
+              if (!sessionID || !partID || part?.type !== 'text') continue
+
+              await handleTextPart({
+                part,
+                role,
+                sessionID,
+                messageID,
+                replay: true,
+              })
             }
 
-            // ❌ pendingTextPartsByMessageId を処理しない
             return
           }
 
@@ -848,57 +934,12 @@ const plugin: Plugin = async ({ client }) => {
               pendingTextPartsByMessageId.set(messageID, list)
               return
             }
-
-            if (type === 'text') {
-              if (role === 'assistant' && !part?.time?.end) return
-
-              const text = safeString(part?.text)
-
-              if (
-                role === 'user' &&
-                excludeInputContext &&
-                isInputContextText(text)
-              ) {
-                const snapshot = JSON.stringify({
-                  type,
-                  role,
-                  skipped: 'input_context',
-                })
-                setIfChanged(new Map(), partID, snapshot)
-                return
-              }
-
-              if (role === 'user' && !firstUserTextBySession.has(sessionID)) {
-                const normalized = normalizeThreadTitle(text)
-                if (normalized)
-                  firstUserTextBySession.set(sessionID, normalized)
-              }
-
-              const embed: DiscordEmbed = {
-                title: getTextPartEmbedTitle(role as 'user' | 'assistant'),
-                color: COLORS.info,
-                fields: buildFields(
-                  filterSendFields(
-                    [
-                      ['sessionID', sessionID],
-                      ['messageID', messageID],
-                      ['partID', partID],
-                      ['role', role],
-                    ],
-                    sendParams,
-                  ),
-                ),
-                description: truncateText(text || '(empty)', 4096),
-              }
-
-              enqueueToThread(sessionID, { embeds: [embed] })
-
-              if (role === 'user') {
-                await flushPending(sessionID)
-              } else if (shouldFlush(sessionID)) {
-                await flushPending(sessionID)
-              }
-            }
+            await handleTextPart({
+              part,
+              role,
+              sessionID,
+              messageID,
+            })
 
             return
           }
