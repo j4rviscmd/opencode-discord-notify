@@ -695,6 +695,35 @@ const plugin: Plugin = async ({ client }) => {
             return
           }
 
+          case 'session.idle': {
+            const sessionID = (event.properties as any)?.sessionID as
+              | string
+              | undefined
+            if (!sessionID) return
+
+            const embed: DiscordEmbed = {
+              title: 'Session completed',
+              color: COLORS.success,
+              fields: buildFields(
+                filterSendFields(
+                  [['sessionID', sessionID]],
+                  withForcedSendParams(sendParams, ['sessionID']),
+                ),
+              ),
+            }
+
+            const mention = buildCompleteMention()
+            enqueueToThread(sessionID, {
+              content: mention
+                ? `${mention.content} Session completed`
+                : undefined,
+              allowed_mentions: mention?.allowed_mentions,
+              embeds: [embed],
+            })
+            await flushPending(sessionID)
+            return
+          }
+
           case 'message.updated': {
             const info = (event.properties as any)?.info as any
             const messageID = info?.id as string | undefined
