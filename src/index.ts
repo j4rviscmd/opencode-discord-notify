@@ -797,6 +797,25 @@ const plugin: Plugin = async ({ client }) => {
             return
           }
 
+          case 'todo.updated': {
+            const p = event.properties as any
+            const sessionID = p?.sessionID as string | undefined
+            if (!sessionID) return
+
+            const embed: DiscordEmbed = {
+              title: 'Todo updated',
+              color: COLORS.info,
+              fields: buildFields(
+                filterSendFields([['sessionID', sessionID]], sendParams),
+              ),
+              description: buildTodoChecklist(p?.todos),
+            }
+
+            enqueueToThread(sessionID, { embeds: [embed] })
+            if (shouldFlush(sessionID)) await flushPending(sessionID)
+            return
+          }
+
           case 'message.updated': {
             const info = (event.properties as any)?.info as any
             const messageID = info?.id as string | undefined
