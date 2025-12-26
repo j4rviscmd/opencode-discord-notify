@@ -309,17 +309,107 @@ async function postDiscordWebhook(
   const fetchImpl = deps.fetchImpl ?? fetch
   const sleepImpl = deps.sleepImpl ?? sleep
 
+  const fetchImpl = deps.fetchImpl ?? fetch
+  const sleepImpl = deps.sleepImpl ?? sleep
+
   const url = withQuery(webhookUrl, {
     thread_id: threadId,
     wait: wait ? 'true' : undefined,
   })
 
   const requestInit: RequestInit = {
+  const requestInit: RequestInit = {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
+  }
+
+  const doRequest = async () => {
+    return await fetchImpl(url, requestInit)
+  }
+
+  const handleNonOk = async (response: Response) => {
+    const status = response.status
+    const statusText = response.statusText
+
+    const parseRetryAfterFromText = (text: string): number | undefined => {
+      if (!text) return undefined
+      try {
+        const json = JSON.parse(text) as DiscordRateLimitResponse
+        const value = json?.retry_after
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+          return value
+        }
+      } catch {
+        // ignore
+      }
+
+      return undefined
+    }
+
+    const parseRetryAfterFromHeader = (
+      headers: Headers,
+    ): number | undefined => {
+      const raw = headers.get('Retry-After')
+      if (!raw) return undefined
+
+      const value = Number(raw)
+      if (!Number.isFinite(value) || value < 0) return undefined
+      return value
+    }
+
+    if (status === 429) {
+      const text = await response.text().catch(() => '')
+      const retryAfterSeconds =
+        parseRetryAfterFromText(text) ??
+        parseRetryAfterFromHeader(response.headers)
+
+      const waitMs =
+        retryAfterSeconds === undefined
+          ? deps.waitOnRateLimitMs
+          : Math.ceil(retryAfterSeconds * 1000)
+
+      await sleepImpl(waitMs)
+      const retryResponse = await doRequest()
+
+      if (!retryResponse.ok) {
+        if (deps.showErrorAlert) {
+          await deps.maybeAlertError({
+            key: `discord_webhook_error:${status}`,
+            title: 'Discord webhook rate-limited',
+            message: `Discord webhook returned 429 (rate limited). Waited ${Math.round(
+              waitMs / 1000,
+            )}s and retried, but it still failed.`,
+            variant: 'warning',
+          })
+        }
+
+        const retryText = await retryResponse.text().catch(() => '')
+        throw new Error(
+          `Discord webhook failed: ${retryResponse.status} ${retryResponse.statusText} ${retryText}`,
+        )
+      }
+
+      return retryResponse
+    }
+
+    if (deps.showErrorAlert) {
+      await deps.maybeAlertError({
+        key: `discord_webhook_error:${status}`,
+        title: 'Discord webhook error',
+        message: `Discord webhook failed: ${status} ${statusText}`,
+        variant: 'error',
+      })
+    }
+
+    const text = await response.text().catch(() => '')
+    throw new Error(`Discord webhook failed: ${status} ${statusText} ${text}`)
+  }
+
+  const response = await doRequest()
+  const finalResponse = response.ok ? response : await handleNonOk(response)
   }
 
   const doRequest = async () => {
@@ -414,12 +504,20 @@ async function postDiscordWebhook(
     | DiscordRateLimitResponse
     | undefined
 
+
+  const json = (await finalResponse.json().catch(() => undefined)) as
+    | DiscordWebhookMessageResponse
+    | DiscordRateLimitResponse
+    | undefined
+
   if (!json || typeof json !== 'object') return undefined
 
   const channelId = (json as any).channel_id
   const messageId = (json as any).id
   if (typeof channelId !== 'string' || typeof messageId !== 'string') {
+  if (typeof channelId !== 'string' || typeof messageId !== 'string') {
     return undefined
+  }
   }
 
   return {
@@ -434,6 +532,7 @@ type GlobalThisWithGuard = typeof globalThis & {
   [GLOBAL_GUARD_KEY]?: boolean
 }
 
+const plugin: Plugin = async ({ client }) => {
 const plugin: Plugin = async ({ client }) => {
   const globalWithGuard = globalThis as GlobalThisWithGuard
   if (globalWithGuard[GLOBAL_GUARD_KEY]) {
@@ -470,7 +569,54 @@ const plugin: Plugin = async ({ client }) => {
   const waitOnRateLimitMs = 10_000
   const toastCooldownMs = 30_000
 
+  const showErrorAlertRaw = (
+    getEnv('DISCORD_WEBHOOK_SHOW_ERROR_ALERT') ?? '1'
+  ).trim()
+  const showErrorAlert = showErrorAlertRaw !== '0'
+
+  const waitOnRateLimitMs = 10_000
+  const toastCooldownMs = 30_000
+
   const sendParams = parseSendParams(getEnv('SEND_PARAMS'))
+
+  const lastAlertAtByKey = new Map<string, number>()
+
+  const showToast: ShowToast = async ({ title, message, variant }) => {
+    try {
+      await client.tui.showToast({
+        body: {
+          title,
+          message,
+          variant,
+          duration: 8000,
+        },
+      } as any)
+    } catch {
+      // no-op
+    }
+  }
+
+  const maybeAlertError: MaybeAlertError = async ({
+    key,
+    title,
+    message,
+    variant,
+  }) => {
+    if (!showErrorAlert) return
+
+    const now = Date.now()
+    const last = lastAlertAtByKey.get(key)
+    if (last !== undefined && now - last < toastCooldownMs) return
+
+    lastAlertAtByKey.set(key, now)
+    await showToast({ title, message, variant })
+  }
+
+  const postDeps: PostDiscordWebhookDeps = {
+    showErrorAlert,
+    maybeAlertError,
+    waitOnRateLimitMs,
+  }
 
   const lastAlertAtByKey = new Map<string, number>()
 
@@ -560,6 +706,17 @@ const plugin: Plugin = async ({ client }) => {
       },
       postDeps,
     )
+    await postDiscordWebhook(
+      {
+        webhookUrl,
+        body: {
+          ...body,
+          username,
+          avatar_url: avatarUrl,
+        },
+      },
+      postDeps,
+    )
   }
 
   function enqueueToThread(sessionID: string, body: DiscordExecuteWebhookBody) {
@@ -595,11 +752,26 @@ const plugin: Plugin = async ({ client }) => {
     const create = (async () => {
       const queue = pendingPostsBySession.get(sessionID)
       const first = queue?.[0]
+      const queue = pendingPostsBySession.get(sessionID)
+      const first = queue?.[0]
       if (!first) return undefined
 
       const threadName = buildThreadName(sessionID)
 
       try {
+        const res = await postDiscordWebhook(
+          {
+            webhookUrl,
+            wait: true,
+            body: {
+              ...first,
+              thread_name: threadName,
+              username,
+              avatar_url: avatarUrl,
+            },
+          },
+          postDeps,
+        )
         const res = await postDiscordWebhook(
           {
             webhookUrl,
@@ -625,6 +797,15 @@ const plugin: Plugin = async ({ client }) => {
             else pendingPostsBySession.delete(sessionID)
           }
 
+
+          const nextQueue = pendingPostsBySession.get(sessionID)
+          if (nextQueue?.[0] === first) {
+            nextQueue.shift()
+            if (nextQueue.length)
+              pendingPostsBySession.set(sessionID, nextQueue)
+            else pendingPostsBySession.delete(sessionID)
+          }
+
           return res.channel_id
         }
 
@@ -632,7 +813,18 @@ const plugin: Plugin = async ({ client }) => {
       } catch {
         // Forum webhook 以外だと thread 作成が失敗する可能性がある。
         // 通知ロスト回避のため、先頭要素のみチャンネル直投稿にフォールバック。
+      } catch {
+        // Forum webhook 以外だと thread 作成が失敗する可能性がある。
+        // 通知ロスト回避のため、先頭要素のみチャンネル直投稿にフォールバック。
         await sendToChannel(first)
+
+        const nextQueue = pendingPostsBySession.get(sessionID)
+        if (nextQueue?.[0] === first) {
+          nextQueue.shift()
+          if (nextQueue.length) pendingPostsBySession.set(sessionID, nextQueue)
+          else pendingPostsBySession.delete(sessionID)
+        }
+
 
         const nextQueue = pendingPostsBySession.get(sessionID)
         if (nextQueue?.[0] === first) {
@@ -658,13 +850,28 @@ const plugin: Plugin = async ({ client }) => {
       const threadId =
         sessionToThread.get(sessionID) ?? (await ensureThread(sessionID))
 
+
       const queue = pendingPostsBySession.get(sessionID)
       if (!queue?.length) return
 
       let sentCount = 0
+      let sentCount = 0
       try {
         if (threadId) {
           for (const body of queue) {
+            await postDiscordWebhook(
+              {
+                webhookUrl,
+                threadId,
+                body: {
+                  ...body,
+                  username,
+                  avatar_url: avatarUrl,
+                },
+              },
+              postDeps,
+            )
+            sentCount += 1
             await postDiscordWebhook(
               {
                 webhookUrl,
@@ -683,10 +890,21 @@ const plugin: Plugin = async ({ client }) => {
           for (const body of queue) {
             await sendToChannel(body)
             sentCount += 1
+            sentCount += 1
           }
         }
 
+
         pendingPostsBySession.delete(sessionID)
+      } catch (e) {
+        const current = pendingPostsBySession.get(sessionID)
+        if (!current?.length) throw e
+
+        const rest = current.slice(sentCount)
+        if (rest.length) pendingPostsBySession.set(sessionID, rest)
+        else pendingPostsBySession.delete(sessionID)
+
+        throw e
       } catch (e) {
         const current = pendingPostsBySession.get(sessionID)
         if (!current?.length) throw e
@@ -1055,6 +1273,8 @@ const plugin: Plugin = async ({ client }) => {
           default:
             return
         }
+      } catch {
+        // no-op
       } catch {
         // no-op
       }
