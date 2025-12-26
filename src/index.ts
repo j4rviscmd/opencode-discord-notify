@@ -846,7 +846,7 @@ const plugin: Plugin = async ({ client }) => {
   }
 }
 
-export const __test__ = {
+;(plugin as any).__test__ = {
   buildMention,
   buildTodoChecklist,
   buildFields,
