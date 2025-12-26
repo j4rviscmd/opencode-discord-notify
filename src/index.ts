@@ -749,9 +749,7 @@ const plugin: Plugin = async ({ client }) => {
             const mention = buildPermissionMention()
 
             enqueueToThread(sessionID, {
-              content: mention
-                ? `${mention.content} Permission required`
-                : undefined,
+              content: mention ? `${mention.content}` : undefined,
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
