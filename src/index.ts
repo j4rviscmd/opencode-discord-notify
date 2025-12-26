@@ -643,6 +643,14 @@ const plugin: Plugin = async ({ client }) => {
     | undefined {
     return buildMention(permissionMention, 'DISCORD_WEBHOOK_PERMISSION_MENTION')
   }
+  /**
+   * Discord のメンションをエスケープする
+   * @param text
+   * @returns
+   */
+  function escapeDiscordMention(text: string): string {
+    return text.replace(/^@/g, '@\u200b')
+  }
 
   async function handleTextPart(input: {
     part: any
@@ -659,7 +667,7 @@ const plugin: Plugin = async ({ client }) => {
     if (sentTextPartIds.has(partID)) return
     sentTextPartIds.add(partID)
 
-    const text = safeString(part?.text)
+    const text = escapeDiscordMention(safeString(part?.text))
 
     if (role === 'user' && excludeInputContext && isInputContextText(text)) {
       return
