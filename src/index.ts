@@ -695,32 +695,6 @@ const plugin: Plugin = async ({ client }) => {
             return
           }
 
-          // case 'session.idle': {
-          //   const sessionID = (event.properties as any)?.sessionID as
-          //     | string
-          //     | undefined
-          //   if (!sessionID) return
-
-          //   const embed: DiscordEmbed = {
-          //     title: 'Session completed',
-          //     color: COLORS.success,
-          //     fields: buildFields(
-          //       filterSendFields(
-          //         [['sessionID', sessionID]],
-          //         withForcedSendParams(sendParams, ['sessionID']),
-          //       ),
-          //     ),
-          //   }
-
-          //   const mention = buildCompleteMention()
-          //   enqueueToThread(sessionID, {
-          //     content: mention ? `${mention.content}` : undefined,
-          //     allowed_mentions: mention?.allowed_mentions,
-          //     embeds: [embed],
-          //   })
-          //   await flushPending(sessionID)
-          //   return
-          // }
           case 'permission.updated': {
             const p = event.properties as any
             const sessionID = p?.sessionID as string | undefined
@@ -766,15 +740,17 @@ const plugin: Plugin = async ({ client }) => {
             const embed: DiscordEmbed = {
               title: 'Session completed',
               color: COLORS.success,
-              fields: buildFields([['sessionID', sessionID]], false),
+              fields: buildFields(
+                filterSendFields(
+                  [['sessionID', sessionID]],
+                  withForcedSendParams(sendParams, ['sessionID']),
+                ),
+              ),
             }
 
             const mention = buildCompleteMention()
-
             enqueueToThread(sessionID, {
-              content: mention
-                ? `${mention.content} Session completed`
-                : undefined,
+              content: mention ? `${mention.content}` : undefined,
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             })
