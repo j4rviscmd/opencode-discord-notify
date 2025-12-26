@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import pluginDefault, { __test__ } from './index'
+import pluginDefault from './index'
+
+const __test__ = (pluginDefault as any).__test__
 
 const createClientMock = () => {
   return {
