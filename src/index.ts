@@ -759,6 +759,44 @@ const plugin: Plugin = async ({ client }) => {
             return
           }
 
+          case 'session.error': {
+            const p = event.properties as any
+            const sessionID = p?.sessionID as string | undefined
+
+            const errorStr = safeString(p?.error)
+            const embed: DiscordEmbed = {
+              title: 'Session error',
+              color: COLORS.error,
+              description: errorStr
+                ? errorStr.length > 4096
+                  ? errorStr.slice(0, 4093) + '...'
+                  : errorStr
+                : undefined,
+              fields: buildFields(
+                filterSendFields(
+                  [['sessionID', sessionID]],
+                  withForcedSendParams(sendParams, [
+                    'sessionID',
+                    'projectID',
+                    'directory',
+                  ]),
+                ),
+              ),
+            }
+
+            if (!sessionID) return
+
+            const mention = buildCompleteMention()
+
+            enqueueToThread(sessionID, {
+              content: mention ? `$Session error` : undefined,
+              allowed_mentions: mention?.allowed_mentions,
+              embeds: [embed],
+            })
+            await flushPending(sessionID)
+            return
+          }
+
           case 'message.updated': {
             const info = (event.properties as any)?.info as any
             const messageID = info?.id as string | undefined
