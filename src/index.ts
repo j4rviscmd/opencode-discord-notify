@@ -132,18 +132,14 @@ function getEnv(name: string): string | undefined {
 }
 
 function parseSendParams(raw: string | undefined): Set<SendParamKey> {
-  if (raw === undefined) return new Set(SEND_PARAM_KEYS)
-
-  // 特別値の判定（大文字小文字を区別しない）
-  const normalized = raw.trim().toLowerCase()
-  if (normalized === 'none') return new Set()
+  if (raw === undefined) return new Set()
 
   const tokens = raw
     .split(',')
     .map((v) => v.trim())
     .filter(Boolean)
 
-  if (!tokens.length) return new Set(SEND_PARAM_KEYS)
+  if (!tokens.length) return new Set()
 
   const result = new Set<SendParamKey>()
   for (const token of tokens) {
