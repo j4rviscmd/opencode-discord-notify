@@ -41,7 +41,8 @@ describe('__test__.buildFields', () => {
     ).toEqual(['long', 'ok'])
 
     const longField = result?.find(
-      (f: { name: string; value: string; inline?: boolean }) => f.name === 'long',
+      (f: { name: string; value: string; inline?: boolean }) =>
+        f.name === 'long',
     )
     expect(longField?.value.length).toBe(1024)
     expect(longField?.value.endsWith('...')).toBe(true)
