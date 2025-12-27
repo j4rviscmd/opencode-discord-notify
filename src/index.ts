@@ -875,7 +875,7 @@ const plugin: Plugin = async ({ client }) => {
               fields: buildFields(
                 filterSendFields(
                   [['sessionID', sessionID]],
-                  withForcedSendParams(sendParams, ['sessionID']),
+                  sendParams,
                 ),
               ),
             }
