@@ -34,9 +34,15 @@ describe('__test__.buildFields', () => {
       ['ok', 'v'],
     ])
 
-    expect(result?.map((f) => f.name)).toEqual(['long', 'ok'])
+    expect(
+      result?.map(
+        (f: { name: string; value: string; inline?: boolean }) => f.name,
+      ),
+    ).toEqual(['long', 'ok'])
 
-    const longField = result?.find((f) => f.name === 'long')
+    const longField = result?.find(
+      (f: { name: string; value: string; inline?: boolean }) => f.name === 'long',
+    )
     expect(longField?.value.length).toBe(1024)
     expect(longField?.value.endsWith('...')).toBe(true)
   })
