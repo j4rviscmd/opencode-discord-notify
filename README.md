@@ -33,7 +33,7 @@ Add to your `opencode.json` or `opencode.jsonc`:
 
 ```jsonc
 {
-  "plugin": ["opencode-discord-notify@latest"]
+  "plugin": ["opencode-discord-notify@latest"],
 }
 ```
 
@@ -60,17 +60,17 @@ export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DISCORD_WEBHOOK_URL` | ✅ Yes | - | Discord webhook URL. Plugin is disabled if not set. |
-| `DISCORD_WEBHOOK_USERNAME` | ❌ No | - | Custom username for webhook posts |
-| `DISCORD_WEBHOOK_AVATAR_URL` | ❌ No | - | Custom avatar URL for webhook posts |
-| `DISCORD_WEBHOOK_COMPLETE_MENTION` | ❌ No | - | Add `@everyone` or `@here` to session completion/error notifications |
-| `DISCORD_WEBHOOK_PERMISSION_MENTION` | ❌ No | - | Add `@everyone` or `@here` to permission request notifications |
-| `DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT` | ❌ No | `1` | Set to `0` to include file context in notifications |
-| `DISCORD_WEBHOOK_SHOW_ERROR_ALERT` | ❌ No | `1` | Set to `0` to disable error toast notifications |
-| `DISCORD_SEND_PARAMS` | ❌ No | - | Comma-separated embed fields: `sessionID,permissionID,type,pattern,messageID,callID,partID,role,directory,projectID` |
-| `DISCORD_WEBHOOK_FALLBACK_URL` | ❌ No | - | Fallback webhook URL for text channel (sends mentions here too for guaranteed ping) |
+| Variable                                | Required | Default | Description                                                                                                          |
+| --------------------------------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| `DISCORD_WEBHOOK_URL`                   | ✅ Yes   | -       | Discord webhook URL. Plugin is disabled if not set.                                                                  |
+| `DISCORD_WEBHOOK_USERNAME`              | ❌ No    | -       | Custom username for webhook posts                                                                                    |
+| `DISCORD_WEBHOOK_AVATAR_URL`            | ❌ No    | -       | Custom avatar URL for webhook posts                                                                                  |
+| `DISCORD_WEBHOOK_COMPLETE_MENTION`      | ❌ No    | -       | Add `@everyone` or `@here` to session completion/error notifications                                                 |
+| `DISCORD_WEBHOOK_PERMISSION_MENTION`    | ❌ No    | -       | Add `@everyone` or `@here` to permission request notifications                                                       |
+| `DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT` | ❌ No    | `1`     | Set to `0` to include file context in notifications                                                                  |
+| `DISCORD_WEBHOOK_SHOW_ERROR_ALERT`      | ❌ No    | `1`     | Set to `0` to disable error toast notifications                                                                      |
+| `DISCORD_SEND_PARAMS`                   | ❌ No    | -       | Comma-separated embed fields: `sessionID,permissionID,type,pattern,messageID,callID,partID,role,directory,projectID` |
+| `DISCORD_WEBHOOK_FALLBACK_URL`          | ❌ No    | -       | Fallback webhook URL for text channel (sends mentions here too for guaranteed ping)                                  |
 
 ### Example Configuration
 
@@ -153,6 +153,7 @@ To ensure you get notified:
 ### Fallback Message Format
 
 Fallback messages always include:
+
 - `sessionID` field
 - `thread title` field (same as Forum thread name)
 
@@ -184,12 +185,15 @@ This provides context when viewing notifications in the text channel.
 Controls which metadata fields appear in embeds.
 
 **Allowed keys:**
+
 - `sessionID`, `permissionID`, `type`, `pattern`, `messageID`, `callID`, `partID`, `role`, `directory`, `projectID`
 
 **Default behavior (unset/empty):**
+
 - No fields sent (cleaner embeds)
 
 **To send all fields:**
+
 ```bash
 export DISCORD_SEND_PARAMS="sessionID,permissionID,type,pattern,messageID,callID,partID,role,directory,projectID"
 ```
@@ -222,7 +226,7 @@ Main implementation: `src/index.ts`
 - [ ] Customizable notification templates
 - [ ] Configuration file support (e.g., `opencode-discord-notify.config.json`)
 - [ ] Enhanced rate limit handling (smarter retry logic, message queuing)
-- [ ] CI/CD (automated linting, formatting, testing)
+- [x] CI/CD (automated linting, formatting, testing)
 
 ## Contributing
 
