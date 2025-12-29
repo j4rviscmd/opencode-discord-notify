@@ -471,6 +471,8 @@ describe('plugin integration', () => {
       },
     } as any)
 
+    await waitForQueueWorker(instance)
+
     const permissionBody = calls
       .map((c) => JSON.parse(String(c.init.body)))
       .find((b) => b.content === '@here')
@@ -556,6 +558,8 @@ describe('plugin integration', () => {
       },
     } as any)
 
+    await waitForQueueWorker(instance)
+
     const idleBody = calls
       .map((c) => JSON.parse(String(c.init.body)))
       .find((b) => b.content === '@everyone')
@@ -619,6 +623,8 @@ describe('plugin integration', () => {
         properties: { sessionID: 's1', error: 'Test error occurred' },
       },
     } as any)
+
+    await waitForQueueWorker(instance)
 
     const errorBody = calls
       .map((c) => JSON.parse(String(c.init.body)))
