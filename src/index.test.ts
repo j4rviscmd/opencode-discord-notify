@@ -1467,3 +1467,356 @@ describe('plugin integration', () => {
     expect(callCount).toBe(2)
   })
 })
+
+describe('session.idle with last assistant message', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    delete (globalThis as any).__opencode_discord_notify_registered__
+
+    process.env.DISCORD_WEBHOOK_URL = 'https://discord.invalid/webhook'
+    process.env.DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT = '0'
+
+    delete process.env.DISCORD_WEBHOOK_COMPLETE_MENTION
+    delete process.env.DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE
+
+    // Save original fetch
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    // Restore original fetch
+    globalThis.fetch = originalFetch
+  })
+
+  it('includes last assistant message in session.idle by default', async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = []
+
+    globalThis.fetch = vi.fn(async (url: any, init: any) => {
+      calls.push({ url: String(url), init })
+
+      if (calls.length === 1) {
+        return new Response(
+          JSON.stringify({ id: 'm0', channel_id: 'thread123' }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        )
+      }
+
+      return new Response(null, { status: 204 })
+    }) as any
+
+    const instance = await (pluginDefault as any)({
+      client: createClientMock(),
+    })
+
+    // session.created
+    await instance.event?.({
+      event: {
+        type: 'session.created',
+        properties: {
+          info: {
+            id: 's1',
+            title: 'Test Session',
+            time: { created: 0 },
+          },
+        },
+      },
+    } as any)
+
+    // User message (message.updated)
+    await instance.event?.({
+      event: {
+        type: 'message.updated',
+        properties: {
+          info: {
+            id: 'm1',
+            role: 'user',
+          },
+        },
+      },
+    } as any)
+
+    // User text part
+    await instance.event?.({
+      event: {
+        type: 'message.part.updated',
+        properties: {
+          part: {
+            sessionID: 's1',
+            messageID: 'm1',
+            id: 'p1',
+            type: 'text',
+            text: 'Hello',
+            time: { end: 1 },
+          },
+        },
+      },
+    } as any)
+
+    // Assistant message (message.updated)
+    await instance.event?.({
+      event: {
+        type: 'message.updated',
+        properties: {
+          info: {
+            id: 'm2',
+            role: 'assistant',
+          },
+        },
+      },
+    } as any)
+
+    // Assistant text part
+    await instance.event?.({
+      event: {
+        type: 'message.part.updated',
+        properties: {
+          part: {
+            sessionID: 's1',
+            messageID: 'm2',
+            id: 'p2',
+            type: 'text',
+            text: 'This is the last assistant message',
+            time: { end: 2 },
+          },
+        },
+      },
+    } as any)
+
+    // session.idle
+    await instance.event?.({
+      event: {
+        type: 'session.idle',
+        properties: {
+          sessionID: 's1',
+        },
+      },
+    } as any)
+
+    await waitForQueueWorker(instance)
+
+    // Find session.idle call
+    const idleCall = calls.find((c) => {
+      const body = JSON.parse(c.init.body as string)
+      return body.embeds?.[0]?.title === 'Session completed'
+    })
+
+    expect(idleCall).toBeDefined()
+    const idleBody = JSON.parse(idleCall!.init.body as string)
+    expect(idleBody.embeds[0].description).toBe(
+      'This is the last assistant message',
+    )
+  })
+
+  it('excludes last assistant message when DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE=0', async () => {
+    process.env.DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE = '0'
+
+    const calls: Array<{ url: string; init: RequestInit }> = []
+
+    globalThis.fetch = vi.fn(async (url: any, init: any) => {
+      calls.push({ url: String(url), init })
+
+      if (calls.length === 1) {
+        return new Response(
+          JSON.stringify({ id: 'm0', channel_id: 'thread123' }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        )
+      }
+
+      return new Response(null, { status: 204 })
+    }) as any
+
+    const instance = await (pluginDefault as any)({
+      client: createClientMock(),
+    })
+
+    // session.created
+    await instance.event?.({
+      event: {
+        type: 'session.created',
+        properties: {
+          info: {
+            id: 's1',
+            title: 'Test Session',
+            time: { created: 0 },
+          },
+        },
+      },
+    } as any)
+
+    // User message
+    await instance.event?.({
+      event: {
+        type: 'message.updated',
+        properties: {
+          info: {
+            id: 'm1',
+            role: 'user',
+          },
+        },
+      },
+    } as any)
+
+    await instance.event?.({
+      event: {
+        type: 'message.part.updated',
+        properties: {
+          part: {
+            sessionID: 's1',
+            messageID: 'm1',
+            id: 'p1',
+            type: 'text',
+            text: 'Hello',
+            time: { end: 1 },
+          },
+        },
+      },
+    } as any)
+
+    // Assistant message
+    await instance.event?.({
+      event: {
+        type: 'message.updated',
+        properties: {
+          info: {
+            id: 'm2',
+            role: 'assistant',
+          },
+        },
+      },
+    } as any)
+
+    await instance.event?.({
+      event: {
+        type: 'message.part.updated',
+        properties: {
+          part: {
+            sessionID: 's1',
+            messageID: 'm2',
+            id: 'p2',
+            type: 'text',
+            text: 'This is the last assistant message',
+            time: { end: 2 },
+          },
+        },
+      },
+    } as any)
+
+    // session.idle
+    await instance.event?.({
+      event: {
+        type: 'session.idle',
+        properties: {
+          sessionID: 's1',
+        },
+      },
+    } as any)
+
+    await waitForQueueWorker(instance)
+
+    // Find session.idle call
+    const idleCall = calls.find((c) => {
+      const body = JSON.parse(c.init.body as string)
+      return body.embeds?.[0]?.title === 'Session completed'
+    })
+
+    expect(idleCall).toBeDefined()
+    const idleBody = JSON.parse(idleCall!.init.body as string)
+    expect(idleBody.embeds[0].description).toBeUndefined()
+  })
+
+  it('handles session.idle when no assistant message exists', async () => {
+    const calls: Array<{ url: string; init: RequestInit }> = []
+
+    globalThis.fetch = vi.fn(async (url: any, init: any) => {
+      calls.push({ url: String(url), init })
+
+      if (calls.length === 1) {
+        return new Response(
+          JSON.stringify({ id: 'm0', channel_id: 'thread123' }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        )
+      }
+
+      return new Response(null, { status: 204 })
+    }) as any
+
+    const instance = await (pluginDefault as any)({
+      client: createClientMock(),
+    })
+
+    // session.created
+    await instance.event?.({
+      event: {
+        type: 'session.created',
+        properties: {
+          info: {
+            id: 's1',
+            title: 'Test Session',
+            time: { created: 0 },
+          },
+        },
+      },
+    } as any)
+
+    // User message only
+    await instance.event?.({
+      event: {
+        type: 'message.updated',
+        properties: {
+          info: {
+            id: 'm1',
+            role: 'user',
+          },
+        },
+      },
+    } as any)
+
+    await instance.event?.({
+      event: {
+        type: 'message.part.updated',
+        properties: {
+          part: {
+            sessionID: 's1',
+            messageID: 'm1',
+            id: 'p1',
+            type: 'text',
+            text: 'Hello',
+            time: { end: 1 },
+          },
+        },
+      },
+    } as any)
+
+    // session.idle (no assistant message)
+    await instance.event?.({
+      event: {
+        type: 'session.idle',
+        properties: {
+          sessionID: 's1',
+        },
+      },
+    } as any)
+
+    await waitForQueueWorker(instance)
+
+    // Find session.idle call
+    const idleCall = calls.find((c) => {
+      const body = JSON.parse(c.init.body as string)
+      return body.embeds?.[0]?.title === 'Session completed'
+    })
+
+    expect(idleCall).toBeDefined()
+    const idleBody = JSON.parse(idleCall!.init.body as string)
+    expect(idleBody.embeds[0].description).toBeUndefined()
+  })
+})

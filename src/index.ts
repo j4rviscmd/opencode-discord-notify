@@ -576,6 +576,11 @@ const plugin: Plugin = async ({ client }) => {
   ).trim()
   const showErrorAlert = showErrorAlertRaw !== '0'
 
+  const includeLastMessageInCompleteRaw = (
+    getEnv('DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE') ?? '1'
+  ).trim()
+  const includeLastMessageInComplete = includeLastMessageInCompleteRaw !== '0'
+
   const waitOnRateLimitMs = DEFAULT_RATE_LIMIT_WAIT_MS
 
   const sendParams = parseSendParams(getEnv('DISCORD_SEND_PARAMS'))
@@ -655,6 +660,7 @@ const plugin: Plugin = async ({ client }) => {
     },
   })
   const firstUserTextBySession = new Map<string, string>()
+  const lastAssistantMessageBySession = new Map<string, string>()
   const pendingTextPartsByMessageId = new Map<string, any[]>()
   const messageRoleById = new Map<string, 'user' | 'assistant'>()
   /**
@@ -814,6 +820,11 @@ const plugin: Plugin = async ({ client }) => {
       if (normalized) firstUserTextBySession.set(sessionID, normalized)
     }
 
+    // 最新アシスタント発言を保存（session.idle通知に使用）
+    if (role === 'assistant' && text.trim()) {
+      lastAssistantMessageBySession.set(sessionID, text)
+    }
+
     /**
      * 初回ユーザーメッセージ時の処理（Option 3実装）
      * - スレッドが未作成 かつ ユーザーメッセージの場合
@@ -945,9 +956,17 @@ const plugin: Plugin = async ({ client }) => {
 
             const mention = buildCompleteMention()
 
+            // 最新アシスタント発言を取得（オプトアウト可能）
+            const lastMessage = includeLastMessageInComplete
+              ? lastAssistantMessageBySession.get(sessionID)
+              : undefined
+
             const embed: DiscordEmbed = {
               title: 'Session completed',
               color: COLORS.success,
+              description: lastMessage
+                ? truncateText(lastMessage, DISCORD_EMBED_DESCRIPTION_MAX_LENGTH)
+                : undefined,
               fields: buildFields(
                 filterSendFields(
                   [['sessionID', sessionID]],
