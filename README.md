@@ -253,8 +253,9 @@ Main implementation: `src/index.ts`
 ## Roadmap
 
 - [ ] Support multiple webhooks for routing by event type
-- [ ] Customizable notification templates
-- [ ] Configuration file support (e.g., `opencode-discord-notify.config.json`)
+- [ ] Message filtering/customization
+- [x] Customizable notification templates
+- [x] Configuration file support (e.g., `opencode-discord-notify.config.json`)
 - [x] Enhanced rate limit handling (smarter retry logic, message queuing)
 - [x] CI/CD (automated linting, formatting, testing)
 
