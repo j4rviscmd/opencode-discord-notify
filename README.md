@@ -1,4 +1,4 @@
-# opencode-discord-notify
+# OPENCODE-DISCORD-NOTIFY
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![npm version](https://img.shields.io/npm/v/opencode-discord-notify?logo=npm&logoColor=fff)](https://www.npmjs.com/package/opencode-discord-notify)
