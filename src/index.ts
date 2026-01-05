@@ -1,7 +1,7 @@
 import type { Plugin } from '@opencode-ai/plugin'
-import { initDatabase } from './utils/db.js'
 import { PersistentQueue } from './queue/persistent-queue.js'
 import { QueueWorker } from './queue/worker.js'
+import { initDatabase } from './utils/db.js'
 
 // ================================================================================
 // Type Definitions
@@ -125,10 +125,8 @@ function buildFields(
     // Discord API制限: フィールド値は最大1024文字
     const truncatedValue =
       value.length > DISCORD_FIELD_VALUE_MAX_LENGTH
-        ? value.slice(
-            0,
-            DISCORD_FIELD_VALUE_MAX_LENGTH - ELLIPSIS_LENGTH,
-          ) + ELLIPSIS
+        ? value.slice(0, DISCORD_FIELD_VALUE_MAX_LENGTH - ELLIPSIS_LENGTH) +
+          ELLIPSIS
         : value
 
     result.push({
@@ -517,10 +515,7 @@ async function postFallbackIfNeeded(
     fallbackBody.embeds = [
       {
         ...originalEmbed,
-        fields: [
-          ...(originalEmbed.fields ?? []),
-          ...(additionalFields ?? []),
-        ],
+        fields: [...(originalEmbed.fields ?? []), ...(additionalFields ?? [])],
       },
     ]
   }
@@ -585,9 +580,8 @@ const plugin: Plugin = async ({ client }) => {
 
   const sendParams = parseSendParams(getEnv('DISCORD_SEND_PARAMS'))
 
-  const fallbackWebhookUrl = (
-    getEnv('DISCORD_WEBHOOK_FALLBACK_URL') ?? ''
-  ).trim() || undefined
+  const fallbackWebhookUrl =
+    (getEnv('DISCORD_WEBHOOK_FALLBACK_URL') ?? '').trim() || undefined
 
   const lastAlertAtByKey = new Map<string, number>()
   // 既送 partID を保持
@@ -973,13 +967,13 @@ const plugin: Plugin = async ({ client }) => {
               title: 'Session completed',
               color: COLORS.success,
               description: lastMessage
-                ? truncateText(lastMessage, DISCORD_EMBED_DESCRIPTION_MAX_LENGTH)
+                ? truncateText(
+                    lastMessage,
+                    DISCORD_EMBED_DESCRIPTION_MAX_LENGTH,
+                  )
                 : undefined,
               fields: buildFields(
-                filterSendFields(
-                  [['sessionID', sessionID]],
-                  sendParams,
-                ),
+                filterSendFields([['sessionID', sessionID]], sendParams),
               ),
             }
 

@@ -61,7 +61,9 @@ export class PersistentQueue {
   }
 
   count(): number {
-    const result = this.db.query('SELECT COUNT(*) as count FROM discord_queue').get() as any
+    const result = this.db
+      .query('SELECT COUNT(*) as count FROM discord_queue')
+      .get() as any
     return result.count
   }
 

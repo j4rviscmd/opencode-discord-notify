@@ -61,19 +61,19 @@ export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 
 ### Environment Variables
 
-| Variable                                        | Required | Default                                      | Description                                                                                                          |
-| ----------------------------------------------- | -------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `DISCORD_WEBHOOK_URL`                           | ✅ Yes   | -                                            | Discord webhook URL. Plugin is disabled if not set.                                                                  |
-| `DISCORD_WEBHOOK_USERNAME`                      | ❌ No    | -                                            | Custom username for webhook posts                                                                                    |
-| `DISCORD_WEBHOOK_AVATAR_URL`                    | ❌ No    | -                                            | Custom avatar URL for webhook posts                                                                                  |
-| `DISCORD_WEBHOOK_COMPLETE_MENTION`              | ❌ No    | -                                            | Add `@everyone` or `@here` to session completion/error notifications                                                 |
-| `DISCORD_WEBHOOK_PERMISSION_MENTION`            | ❌ No    | -                                            | Add `@everyone` or `@here` to permission request notifications                                                       |
-| `DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE` | ❌ No    | `1`                                          | Set to `0` to exclude the last assistant message from session completion notifications                               |
-| `DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT`         | ❌ No    | `1`                                          | Set to `0` to include file context in notifications                                                                  |
-| `DISCORD_WEBHOOK_SHOW_ERROR_ALERT`              | ❌ No    | `1`                                          | Set to `0` to disable error toast notifications                                                                      |
+| Variable                                        | Required | Default                                      | Description                                                                                                                 |
+| ----------------------------------------------- | -------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `DISCORD_WEBHOOK_URL`                           | ✅ Yes   | -                                            | Discord webhook URL. Plugin is disabled if not set.                                                                         |
+| `DISCORD_WEBHOOK_USERNAME`                      | ❌ No    | -                                            | Custom username for webhook posts                                                                                           |
+| `DISCORD_WEBHOOK_AVATAR_URL`                    | ❌ No    | -                                            | Custom avatar URL for webhook posts                                                                                         |
+| `DISCORD_WEBHOOK_COMPLETE_MENTION`              | ❌ No    | -                                            | Add `@everyone` or `@here` to session completion/error notifications                                                        |
+| `DISCORD_WEBHOOK_PERMISSION_MENTION`            | ❌ No    | -                                            | Add `@everyone` or `@here` to permission request notifications                                                              |
+| `DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE` | ❌ No    | `1`                                          | Set to `0` to exclude the last assistant message from session completion notifications                                      |
+| `DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT`         | ❌ No    | `1`                                          | Set to `0` to include file context in notifications                                                                         |
+| `DISCORD_WEBHOOK_SHOW_ERROR_ALERT`              | ❌ No    | `1`                                          | Set to `0` to disable error toast notifications                                                                             |
 | `DISCORD_SEND_PARAMS`                           | ❌ No    | -                                            | Comma-separated embed fields: `sessionID,permissionID,permission,patterns,messageID,callID,partID,role,directory,projectID` |
-| `DISCORD_WEBHOOK_FALLBACK_URL`                  | ❌ No    | -                                            | Fallback webhook URL for text channel (sends mentions here too for guaranteed ping)                                  |
-| `DISCORD_NOTIFY_QUEUE_DB_PATH`                  | ❌ No    | `~/.config/opencode/discord-notify-queue.db` | Custom path for the persistent queue database                                                                        |
+| `DISCORD_WEBHOOK_FALLBACK_URL`                  | ❌ No    | -                                            | Fallback webhook URL for text channel (sends mentions here too for guaranteed ping)                                         |
+| `DISCORD_NOTIFY_QUEUE_DB_PATH`                  | ❌ No    | `~/.config/opencode/discord-notify-queue.db` | Custom path for the persistent queue database                                                                               |
 
 ### Example Configuration
 

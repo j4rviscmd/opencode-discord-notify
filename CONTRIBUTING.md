@@ -25,6 +25,7 @@ Please be respectful and constructive in all interactions. We aim to maintain a 
 ### Prerequisites
 
 <!-- Customize this section for each project -->
+
 - Node.js 18+ / Python 3.10+ / Go 1.21+ (depending on the project)
 - Git
 - [Additional dependencies specific to your project]
@@ -65,6 +66,7 @@ Use the following format:
 ```
 
 **Types:**
+
 - `feature/` - New features
 - `fix/` - Bug fixes
 - `docs/` - Documentation updates
@@ -72,6 +74,7 @@ Use the following format:
 - `refactor/` - Code refactoring
 
 **Examples:**
+
 ```
 feature/add-user-authentication
 fix/memory-leak-issue
@@ -93,18 +96,21 @@ chore/update-dependencies
 ### Language-Specific Guidelines
 
 #### TypeScript/JavaScript
+
 - **Indentation**: 2 spaces
 - **Naming**: camelCase for variables/functions, PascalCase for classes
 - **Formatter**: Prettier
 - **Documentation**: JSDoc for functions and classes
 
 #### Python
+
 - **Indentation**: 4 spaces (PEP 8)
 - **Naming**: snake_case for variables/functions, PascalCase for classes
 - **Formatter**: ruff or black
 - **Documentation**: Docstrings for functions and classes
 
 #### Go
+
 - **Indentation**: Tabs
 - **Naming**: camelCase (PascalCase for exported items)
 - **Formatter**: gofmt
@@ -141,18 +147,18 @@ We follow **Conventional Commits** format:
 
 ### Commit Types
 
-| Type       | Description                                    |
-|------------|------------------------------------------------|
-| `feat`     | New feature                                    |
-| `fix`      | Bug fix                                        |
-| `docs`     | Documentation changes only                     |
-| `style`    | Code formatting (no functional changes)        |
-| `refactor` | Code refactoring (no functional changes)       |
-| `test`     | Adding or updating tests                       |
-| `chore`    | Build process, dependency updates, configs     |
-| `perf`     | Performance improvements                       |
-| `ci`       | CI/CD configuration changes                    |
-| `revert`   | Reverting a previous commit                    |
+| Type       | Description                                |
+| ---------- | ------------------------------------------ |
+| `feat`     | New feature                                |
+| `fix`      | Bug fix                                    |
+| `docs`     | Documentation changes only                 |
+| `style`    | Code formatting (no functional changes)    |
+| `refactor` | Code refactoring (no functional changes)   |
+| `test`     | Adding or updating tests                   |
+| `chore`    | Build process, dependency updates, configs |
+| `perf`     | Performance improvements                   |
+| `ci`       | CI/CD configuration changes                |
+| `revert`   | Reverting a previous commit                |
 
 ### Scope (Optional)
 
@@ -197,6 +203,7 @@ Refs #42
 ### Before Creating a PR
 
 1. **Update your branch** with the latest `main`:
+
    ```bash
    git checkout main
    git pull origin main
@@ -205,6 +212,7 @@ Refs #42
    ```
 
 2. **Run tests** and ensure they pass:
+
    ```bash
    npm test  # or equivalent for your project
    ```
@@ -217,6 +225,7 @@ Refs #42
 ### Creating a Pull Request
 
 1. **Push your branch** to your fork:
+
    ```bash
    git push -u origin your-branch
    ```
@@ -266,6 +275,7 @@ We provide issue templates for common scenarios:
 #### Feature Request
 
 Use [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md) to:
+
 - Describe the feature
 - Explain the motivation
 - Propose a solution
@@ -274,6 +284,7 @@ Use [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md) to:
 #### Bug Report
 
 Use [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md) to:
+
 - Describe the bug
 - Provide reproduction steps
 - Include error messages/logs
@@ -282,6 +293,7 @@ Use [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md) to:
 ### Issue Labels
 
 Common labels used:
+
 - `bug` - Something isn't working
 - `enhancement` - New feature or improvement
 - `documentation` - Documentation updates
@@ -301,6 +313,7 @@ Common labels used:
 ## Questions?
 
 If you have questions not covered in this guide, feel free to:
+
 - Open a discussion in GitHub Discussions
 - Ask in existing issues
 - Contact the maintainers

@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite'
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getDbPath, initDatabase } from './db.js'
+import { afterAll, describe, expect, it } from 'vitest'
+import { getDbPath } from './db.js'
 
 describe('db utilities', () => {
   describe('getDbPath', () => {

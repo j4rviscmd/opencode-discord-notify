@@ -98,7 +98,7 @@ The main plugin (`src/index.ts`) handles these OpenCode events:
   - Input context (starts with `<file>`): Excluded by default (configurable)
 - **`session.idle`**: Includes last assistant message in embed description (v0.8.0+)
 - **`session.error`**: Sends error notification with mention
-- **`permission.updated`**: Sends permission request immediately (not queued)
+- **`permission.asked`**: Sends permission request immediately (v1.1.1+ event name)
 - **`todo.updated`**: Sends visual checklist with status markers
 
 ### State Management (In-Memory Maps)
@@ -193,3 +193,28 @@ When releasing new features, bump version in `package.json`. Follow semantic ver
 - Patch (0.7.x → 0.7.y): Bug fixes
 - Minor (0.7.x → 0.8.0): New features (backward compatible)
 - Major (0.x.y → 1.0.0): Breaking changes
+
+## Coding Rules
+
+### Required Before Commit
+
+**コーディング完了後、コミット前に必ず以下を実行すること：**
+
+1. **Prettier でフォーマット**
+
+   ```bash
+   npm run format
+   ```
+
+2. **ビルド確認**
+
+   ```bash
+   npm run build
+   ```
+
+3. **テスト実行**
+   ```bash
+   npm test
+   ```
+
+すべてパスしてからコミットすること。
