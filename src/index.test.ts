@@ -381,7 +381,7 @@ describe('plugin integration', () => {
     expect(secondUrl.searchParams.get('thread_id')).toBe('thread123')
   })
 
-  it('permission.updated: sends permission request with mention', async () => {
+  it('permission.asked: sends permission request with mention', async () => {
     process.env.DISCORD_WEBHOOK_PERMISSION_MENTION = '@here'
 
     const calls: Array<{ url: string; init: RequestInit }> = []
@@ -433,15 +433,17 @@ describe('plugin integration', () => {
 
     await instance.event?.({
       event: {
-        type: 'permission.updated',
+        type: 'permission.asked',
         properties: {
           sessionID: 's1',
           id: 'perm1',
-          type: 'tool_use',
-          pattern: '*.ts',
+          permission: 'tool_use',
+          patterns: ['*.ts'],
           title: 'Permission needed',
-          messageID: 'm2',
-          callID: 'c1',
+          tool: {
+            messageID: 'm2',
+            callID: 'c1',
+          },
           time: { created: 1000 },
         },
       },

@@ -39,8 +39,8 @@ export type DiscordExecuteWebhookBody = {
 type SendParamKey =
   | 'sessionID'
   | 'permissionID'
-  | 'type'
-  | 'pattern'
+  | 'permission'
+  | 'patterns'
   | 'messageID'
   | 'callID'
   | 'partID'
@@ -895,12 +895,18 @@ const plugin: Plugin = async ({ client }) => {
             return
           }
 
-          case 'permission.updated': {
+          case 'permission.asked': {
             const p = event.properties as any
             const sessionID = p?.sessionID as string | undefined
             if (!sessionID) return
 
             const mention = buildPermissionMention()
+
+            // patterns配列を文字列に変換（複数パターンはカンマ区切り）
+            const patternsArray = p?.patterns as string[] | undefined
+            const patternsStr = Array.isArray(patternsArray)
+              ? patternsArray.join(', ')
+              : undefined
 
             const embed: DiscordEmbed = {
               title: 'Permission required',
@@ -912,10 +918,10 @@ const plugin: Plugin = async ({ client }) => {
                   [
                     ['sessionID', sessionID],
                     ['permissionID', p?.id],
-                    ['type', p?.type],
-                    ['pattern', p?.pattern],
-                    ['messageID', p?.messageID],
-                    ['callID', p?.callID],
+                    ['permission', p?.permission],
+                    ['patterns', patternsStr],
+                    ['messageID', p?.tool?.messageID],
+                    ['callID', p?.tool?.callID],
                   ],
                   sendParams,
                 ),

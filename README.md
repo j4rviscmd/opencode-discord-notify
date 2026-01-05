@@ -7,6 +7,8 @@
 ![Discord Webhook](https://img.shields.io/badge/Discord-Webhook-5865F2?logo=discord&logoColor=fff)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
 
+> **Requires OpenCode v1.1.1 or later** (due to breaking changes in the permission event system)
+
 <p align="center">
   <img src="assets/image/sample-forum-ch.png" width="700" alt="Discord Forum channel example" />
 </p>
@@ -69,7 +71,7 @@ export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 | `DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE` | ❌ No    | `1`                                          | Set to `0` to exclude the last assistant message from session completion notifications                               |
 | `DISCORD_WEBHOOK_EXCLUDE_INPUT_CONTEXT`         | ❌ No    | `1`                                          | Set to `0` to include file context in notifications                                                                  |
 | `DISCORD_WEBHOOK_SHOW_ERROR_ALERT`              | ❌ No    | `1`                                          | Set to `0` to disable error toast notifications                                                                      |
-| `DISCORD_SEND_PARAMS`                           | ❌ No    | -                                            | Comma-separated embed fields: `sessionID,permissionID,type,pattern,messageID,callID,partID,role,directory,projectID` |
+| `DISCORD_SEND_PARAMS`                           | ❌ No    | -                                            | Comma-separated embed fields: `sessionID,permissionID,permission,patterns,messageID,callID,partID,role,directory,projectID` |
 | `DISCORD_WEBHOOK_FALLBACK_URL`                  | ❌ No    | -                                            | Fallback webhook URL for text channel (sends mentions here too for guaranteed ping)                                  |
 | `DISCORD_NOTIFY_QUEUE_DB_PATH`                  | ❌ No    | `~/.config/opencode/discord-notify-queue.db` | Custom path for the persistent queue database                                                                        |
 
@@ -106,7 +108,7 @@ export DISCORD_WEBHOOK_AVATAR_URL="https://example.com/avatar.png"
 ### Supported Events
 
 - **`session.created`**: Queues session start notification (sent when thread info is available)
-- **`permission.updated`**: Posts permission request immediately
+- **`permission.asked`**: Posts permission request immediately
 - **`session.idle`**: Posts session completion notification
   - Includes the last assistant message in the embed description by default (customizable via `DISCORD_WEBHOOK_COMPLETE_INCLUDE_LAST_MESSAGE`)
   - Message is truncated to 4096 characters if needed
@@ -215,7 +217,7 @@ Controls which metadata fields appear in embeds.
 
 **Allowed keys:**
 
-- `sessionID`, `permissionID`, `type`, `pattern`, `messageID`, `callID`, `partID`, `role`, `directory`, `projectID`
+- `sessionID`, `permissionID`, `permission`, `patterns`, `messageID`, `callID`, `partID`, `role`, `directory`, `projectID`
 
 **Default behavior (unset/empty):**
 
@@ -224,7 +226,7 @@ Controls which metadata fields appear in embeds.
 **To send all fields:**
 
 ```bash
-export DISCORD_SEND_PARAMS="sessionID,permissionID,type,pattern,messageID,callID,partID,role,directory,projectID"
+export DISCORD_SEND_PARAMS="sessionID,permissionID,permission,patterns,messageID,callID,partID,role,directory,projectID"
 ```
 
 **Note:** `session.created` always includes `sessionID` regardless of this setting.
