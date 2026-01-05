@@ -924,8 +924,22 @@ const plugin: Plugin = async ({ client }) => {
               ),
             }
 
+            // プッシュ通知用の概要テキストを生成
+            // 形式: "Bash(curl -i https://...)" or "Bash" or "Permission requested"
+            const permissionType = (p?.permission as string) || ''
+            const permissionDetail = patternsStr || ''
+            const permissionSummary = truncateText(
+              (p?.title as string) ||
+                (permissionType && permissionDetail
+                  ? `${permissionType}(${permissionDetail})`
+                  : permissionType || 'Permission requested'),
+              100,
+            )
+
             const body: DiscordExecuteWebhookBody = {
-              content: mention ? `${mention.content}` : undefined,
+              content: mention
+                ? `${mention.content} Permission: ${permissionSummary}`
+                : undefined,
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             }
@@ -978,7 +992,9 @@ const plugin: Plugin = async ({ client }) => {
             }
 
             const body: DiscordExecuteWebhookBody = {
-              content: mention ? `${mention.content}` : undefined,
+              content: mention
+                ? `${mention.content} Session completed`
+                : undefined,
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             }
@@ -1036,8 +1052,9 @@ const plugin: Plugin = async ({ client }) => {
             const mention = buildCompleteMention()
 
             const body: DiscordExecuteWebhookBody = {
-              // 🐛 既存バグ修正: `$Session error` → `${mention.content}`
-              content: mention ? `${mention.content}` : undefined,
+              content: mention
+                ? `${mention.content} Session error`
+                : undefined,
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             }

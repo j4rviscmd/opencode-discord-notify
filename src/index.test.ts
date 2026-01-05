@@ -474,8 +474,10 @@ describe('plugin integration', () => {
 
     const permissionBody = calls
       .map((c) => JSON.parse(String(c.init.body)))
-      .find((b) => b.content === '@here')
+      .find((b) => b.content?.startsWith('@here '))
     expect(permissionBody).toBeDefined()
+    // content should include mention and summary text
+    expect(permissionBody.content).toContain('Permission:')
     expect(permissionBody.allowed_mentions.parse).toContain('everyone')
   })
 
@@ -561,8 +563,10 @@ describe('plugin integration', () => {
 
     const idleBody = calls
       .map((c) => JSON.parse(String(c.init.body)))
-      .find((b) => b.content === '@everyone')
+      .find((b) => b.content?.startsWith('@everyone '))
     expect(idleBody).toBeDefined()
+    // content should include mention and fixed label
+    expect(idleBody.content).toBe('@everyone Session completed')
     expect(idleBody.allowed_mentions.parse).toContain('everyone')
   })
 
