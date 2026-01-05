@@ -168,13 +168,10 @@ describe('__test__.postDiscordWebhook', () => {
         }),
       )
       .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ id: 'msg1', channel_id: 'thread123' }),
-          {
-            status: 200,
-            headers: { 'content-type': 'application/json' },
-          },
-        ),
+        new Response(JSON.stringify({ id: 'msg1', channel_id: 'thread123' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
       )
 
     const result = await __test__.postDiscordWebhook(

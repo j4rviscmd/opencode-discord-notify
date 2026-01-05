@@ -76,7 +76,14 @@ describe('QueueWorker', () => {
       const mockQueue = {
         dequeue: vi
           .fn()
-          .mockReturnValueOnce([{ id: 1, webhookBody: {}, threadId: 'thread1', sessionId: 'session1' }])
+          .mockReturnValueOnce([
+            {
+              id: 1,
+              webhookBody: {},
+              threadId: 'thread1',
+              sessionId: 'session1',
+            },
+          ])
           .mockReturnValue([]),
         delete: vi.fn(),
         updateThreadId: vi.fn(),
@@ -284,8 +291,7 @@ describe('QueueWorker', () => {
       expect(mockMaybeAlertError).toHaveBeenCalledWith({
         key: 'discord_queue_retry:1',
         title: 'Discord notification retry',
-        message:
-          'Failed to send notification. Retry 1/5. Error: Network error',
+        message: 'Failed to send notification. Retry 1/5. Error: Network error',
         variant: 'warning',
       })
 
