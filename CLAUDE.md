@@ -198,23 +198,23 @@ When releasing new features, bump version in `package.json`. Follow semantic ver
 
 ### Required Before Commit
 
-**コーディング完了後、コミット前に必ず以下を実行すること：**
+**After coding is complete, always run the following before committing:**
 
-1. **Prettier でフォーマット**
+1. **Format with Prettier**
 
    ```bash
    npm run format
    ```
 
-2. **ビルド確認**
+2. **Verify build**
 
    ```bash
    npm run build
    ```
 
-3. **テスト実行**
+3. **Run tests**
    ```bash
    npm test
    ```
 
-すべてパスしてからコミットすること。
+Only commit after all checks pass.
