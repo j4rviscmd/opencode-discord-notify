@@ -74,8 +74,8 @@ const DEFAULT_RATE_LIMIT_WAIT_MS = 10_000
 const SEND_PARAM_KEYS: SendParamKey[] = [
   'sessionID',
   'permissionID',
-  'type',
-  'pattern',
+  'permission',
+  'patterns',
   'messageID',
   'callID',
   'partID',
@@ -867,7 +867,9 @@ const plugin: Plugin = async ({ client }) => {
   return {
     event: async ({ event }) => {
       try {
-        switch (event.type) {
+        // NOTE: SDK型定義がv1.1.1+の新しいイベント(permission.asked)を
+        // まだ含んでいないため、stringにキャストして対応
+        switch (event.type as string) {
           case 'session.created': {
             const info = (event.properties as any)?.info
             const sessionID = info?.id as string | undefined
