@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 export function getDbPath(): string {
   // テスト環境ではin-memory DBを使用

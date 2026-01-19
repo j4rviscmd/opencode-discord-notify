@@ -51,9 +51,9 @@ jobs:
         if: steps.npm.outputs.exists == 'false' && success()
         run: npm ci
 
-      - name: Test
+      - name: Build
         if: steps.npm.outputs.exists == 'false' && success()
-        run: npm test
+        run: npm run build
 
       - name: Publish
         if: steps.npm.outputs.exists == 'false' && success()

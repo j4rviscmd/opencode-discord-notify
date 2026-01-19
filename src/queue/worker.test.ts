@@ -57,6 +57,7 @@ describe('QueueWorker', () => {
         postDeps: {},
         maybeAlertError: vi.fn(),
         webhookUrl: 'https://example.com/webhook',
+        buildThreadName: vi.fn((sessionId) => `thread-${sessionId}`),
       })
 
       // 1つ目のstartを開始（バックグラウンドで実行）
@@ -99,6 +100,7 @@ describe('QueueWorker', () => {
         postDeps: {},
         maybeAlertError: vi.fn(),
         webhookUrl: 'https://example.com/webhook',
+        buildThreadName: vi.fn((sessionId) => `thread-${sessionId}`),
       })
 
       const startPromise = worker.start()
@@ -168,6 +170,7 @@ describe('QueueWorker', () => {
         webhookUrl: 'https://example.com/webhook',
         username: 'TestBot',
         avatarUrl: 'https://example.com/avatar.png',
+        buildThreadName: vi.fn((sessionId) => `thread-${sessionId}`),
       })
 
       await worker.start()
@@ -276,6 +279,7 @@ describe('QueueWorker', () => {
         postDeps: {},
         maybeAlertError: mockMaybeAlertError,
         webhookUrl: 'https://example.com/webhook',
+        buildThreadName: vi.fn((sessionId) => `thread-${sessionId}`),
       })
 
       await worker.start()
@@ -332,6 +336,7 @@ describe('QueueWorker', () => {
         postDeps: {},
         maybeAlertError: mockMaybeAlertError,
         webhookUrl: 'https://example.com/webhook',
+        buildThreadName: vi.fn((sessionId) => `thread-${sessionId}`),
       })
 
       await worker.start()
@@ -391,6 +396,7 @@ describe('QueueWorker', () => {
         postDeps: {},
         maybeAlertError: vi.fn(),
         webhookUrl: 'https://example.com/webhook',
+        buildThreadName: vi.fn((sessionId) => `thread-${sessionId}`),
       })
 
       await worker.start()

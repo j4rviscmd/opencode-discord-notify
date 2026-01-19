@@ -210,7 +210,7 @@ function sleep(ms: number): Promise<void> {
 function truncateText(value: string, maxLength: number): string {
   if (value.length <= maxLength) return value
   if (maxLength <= 3) return value.slice(0, maxLength)
-  return value.slice(0, maxLength - 3) + '...'
+  return `${value.slice(0, maxLength - 3)}...`
 }
 
 function buildMention(
@@ -1052,9 +1052,7 @@ const plugin: Plugin = async ({ client }) => {
             const mention = buildCompleteMention()
 
             const body: DiscordExecuteWebhookBody = {
-              content: mention
-                ? `${mention.content} Session error`
-                : undefined,
+              content: mention ? `${mention.content} Session error` : undefined,
               allowed_mentions: mention?.allowed_mentions,
               embeds: [embed],
             }
@@ -1173,7 +1171,6 @@ const plugin: Plugin = async ({ client }) => {
     },
   }
 }
-
 ;(plugin as any).__test__ = {
   buildMention,
   buildTodoChecklist,

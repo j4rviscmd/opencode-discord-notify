@@ -25,8 +25,8 @@ async function waitForQueueWorker(instance: any, timeout = 5000) {
 describe('__test__.toIsoTimestamp', () => {
   it('non-number or non-finite returns undefined', () => {
     expect(__test__.toIsoTimestamp('1')).toBeUndefined()
-    expect(__test__.toIsoTimestamp(NaN)).toBeUndefined()
-    expect(__test__.toIsoTimestamp(Infinity)).toBeUndefined()
+    expect(__test__.toIsoTimestamp(Number.NaN)).toBeUndefined()
+    expect(__test__.toIsoTimestamp(Number.POSITIVE_INFINITY)).toBeUndefined()
   })
 
   it('returns ISO string for numeric input', () => {
