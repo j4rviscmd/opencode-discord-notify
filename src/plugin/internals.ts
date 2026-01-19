@@ -4,4 +4,4 @@ export {
   buildTodoChecklist,
   postDiscordWebhook,
   toIsoTimestamp,
-} from '../index'
+} from '../index';
