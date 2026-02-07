@@ -17,6 +17,12 @@
 
 This plugin creates organized threads in Discord Forum channels for each OpenCode session, keeping you updated on session events, permissions, todos, and conversations.
 
+## Star this repo to keep me motivated ⭐
+
+I build this in my spare time. Every star shows that my work is valued and keeps me going!
+
+![Star](docs/images/star-github.gif)
+
 ## Features
 
 - **Session tracking**: Automatic thread creation for each session
